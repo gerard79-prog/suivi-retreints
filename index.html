@@ -39,6 +39,22 @@
             line-height: 1; /* Adjust line height to center */
             display: block; /* Ensure it takes up space correctly */
         }
+        /* Sync animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .syncing {
+            animation: spin 1s linear infinite;
+        }
+        /* Pulse animation for sync indicator */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
     </style>
 </head>
 <!-- Apply dark mode classes to html for initial background and text -->
@@ -51,12 +67,19 @@
                 <h1 class="text-2xl font-bold">Formulaire Rétreints</h1>
                 <p class="text-indigo-200 text-sm dark:text-indigo-300">Gestion des opérations de production</p>
             </div>
-            <!-- Dark Mode Toggle Icon (using a single emoji span) -->
-            <button id="theme-toggle" type="button" onclick="toggleDarkMode()" 
-                    class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                           text-white hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors duration-200">
-                <span id="theme-icon"></span> <!-- This span's content will change -->
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- Sync Status Indicator -->
+                <div id="syncStatus" class="flex items-center gap-2 text-sm">
+                    <span id="syncIcon" class="text-lg">☁️</span>
+                    <span id="syncText" class="hidden md:inline">Synchronisé</span>
+                </div>
+                <!-- Dark Mode Toggle Icon (using a single emoji span) -->
+                <button id="theme-toggle" type="button" onclick="toggleDarkMode()" 
+                        class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                               text-white hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors duration-200">
+                    <span id="theme-icon"></span> <!-- This span's content will change -->
+                </button>
+            </div>
         </div>
     </div>
 
@@ -82,6 +105,22 @@
                 <h2 class="text-3xl font-bold text-gray-800 mb-4 dark:text-gray-100">Bienvenue</h2>
                 <p class="text-gray-600 mb-6 dark:text-gray-300">Application de gestion des formulaires de rétreints</p>
                 
+                <!-- Cloud Sync Status Banner -->
+                <div id="cloudStatusBanner" class="mb-6 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 border border-blue-200 dark:border-blue-700">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span id="cloudBannerIcon" class="text-2xl">☁️</span>
+                            <div>
+                                <div class="font-semibold text-gray-800 dark:text-gray-100" id="cloudBannerTitle">Synchronisation Cloud Active</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300" id="cloudBannerText">Vos données sont synchronisées entre tous vos appareils</div>
+                            </div>
+                        </div>
+                        <button onclick="manualSync()" id="manualSyncBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm transition-all">
+                            🔄 Synchroniser
+                        </button>
+                    </div>
+                </div>
+
                 <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
                         <div class="text-3xl font-bold" id="stat-total">0</div>
@@ -342,14 +381,12 @@
                     <div class="space-y-8">
                         <div>
                             <h4 class="text-lg font-semibold text-gray-700 mb-3 dark:text-gray-200">Tendance de Production Journalière</h4>
-                            <!-- Added a div wrapper with explicit height for Chart.js -->
                             <div class="relative h-64 w-full bg-gray-50 p-4 rounded-md dark:bg-gray-700">
                                 <canvas id="dailyProductionChart" class="w-full h-full"></canvas>
                             </div>
                         </div>
                         <div>
                             <h4 class="text-lg font-semibold text-gray-700 mb-3 dark:text-gray-200">Répartition de la Production par Machine</h4>
-                             <!-- Added a div wrapper with explicit height for Chart.js -->
                             <div class="relative h-64 w-full bg-gray-50 p-4 rounded-md dark:bg-gray-700">
                                 <canvas id="machineProductionChart" class="w-full h-full"></canvas>
                             </div>
@@ -364,6 +401,49 @@
         <div id="page-parametrage" class="page-content hidden">
             <div class="space-y-6">
                 
+                <!-- Cloud Sync Settings -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">☁️ Synchronisation Cloud</h3>
+                    <p class="text-sm text-gray-600 mb-4 dark:text-gray-400">Activez la synchronisation pour partager vos données entre tous vos appareils</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-md dark:bg-gray-700">
+                            <div>
+                                <div class="font-medium text-gray-800 dark:text-gray-100">Synchronisation automatique</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Synchronise vos données toutes les 30 secondes</div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="autoSyncToggle" class="sr-only peer" onchange="toggleAutoSync()">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-md dark:bg-blue-900 dark:border-blue-700">
+                            <div class="flex items-start gap-3">
+                                <span class="text-xl">ℹ️</span>
+                                <div class="text-sm text-gray-700 dark:text-gray-300">
+                                    <div class="font-medium mb-1">Comment ça marche ?</div>
+                                    <ul class="list-disc list-inside space-y-1 text-xs">
+                                        <li>Les données sont stockées de manière sécurisée dans le cloud</li>
+                                        <li>Accessible depuis tous vos appareils (PC, téléphone, tablette)</li>
+                                        <li>Synchronisation en temps réel entre appareils</li>
+                                        <li>Vos données restent privées et sécurisées</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button onclick="manualSync()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md">
+                                🔄 Synchroniser maintenant
+                            </button>
+                            <button onclick="viewSyncHistory()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md">
+                                📜 Historique de sync
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Temps de production -->
                 <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
                     <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">⏱️ Temps de Production</h3>
@@ -477,8 +557,14 @@
             typesArret: ['Panne', 'Réglage', 'Changement outil', 'Pause', 'Attente matière', 'Autre'],
             equipes: ['Matin', 'Après-midi'],
             objectifAttp: 500,
-            objectifSeraap: 400
+            objectifSeraap: 400,
+            autoSync: true
         };
+
+        // Cloud Sync Variables
+        let syncInterval = null;
+        let lastSyncTime = null;
+        const SYNC_INTERVAL_MS = 30000; // 30 seconds
 
         // Chart.js instances holder
         const chartInstances = {};
@@ -497,6 +583,192 @@
         function timeToSeconds(hhmm) {
             return timeToMinutes(hhmm) * 60;
         }
+
+        // ============ CLOUD SYNC FUNCTIONS ============
+        
+        async function initCloudSync() {
+            // Check if auto-sync is enabled
+            if (settings.autoSync) {
+                document.getElementById('autoSyncToggle').checked = true;
+                startAutoSync();
+            }
+            
+            // Load from cloud on startup
+            await syncFromCloud();
+        }
+
+        function toggleAutoSync() {
+            settings.autoSync = document.getElementById('autoSyncToggle').checked;
+            saveSettings();
+            
+            if (settings.autoSync) {
+                startAutoSync();
+                showSyncStatus('✅ Synchronisation automatique activée', 'success');
+            } else {
+                stopAutoSync();
+                showSyncStatus('⏸️ Synchronisation automatique désactivée', 'warning');
+            }
+        }
+
+        function startAutoSync() {
+            stopAutoSync(); // Clear any existing interval
+            syncInterval = setInterval(async () => {
+                await syncToCloud();
+            }, SYNC_INTERVAL_MS);
+        }
+
+        function stopAutoSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+        }
+
+        async function syncToCloud() {
+            try {
+                updateSyncUI('syncing');
+                
+                // Prepare data for sync
+                const syncData = {
+                    data: data,
+                    settings: settings,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Store in cloud using window.storage API
+                await window.storage.set('retreints-data', JSON.stringify(syncData), true);
+                
+                lastSyncTime = new Date();
+                updateSyncUI('synced');
+                console.log('✅ Données synchronisées vers le cloud');
+                
+            } catch (error) {
+                console.error('❌ Erreur de synchronisation:', error);
+                updateSyncUI('error');
+            }
+        }
+
+        async function syncFromCloud() {
+            try {
+                updateSyncUI('syncing');
+                
+                // Retrieve from cloud
+                const result = await window.storage.get('retreints-data', true);
+                
+                if (result && result.value) {
+                    const cloudData = JSON.parse(result.value);
+                    
+                    // Check if cloud data is newer
+                    const localTimestamp = localStorage.getItem('retreints_timestamp');
+                    
+                    if (!localTimestamp || new Date(cloudData.timestamp) > new Date(localTimestamp)) {
+                        // Cloud data is newer, update local
+                        data = cloudData.data || [];
+                        settings = { ...settings, ...cloudData.settings };
+                        
+                        // Save to localStorage
+                        localStorage.setItem('rétréints', JSON.stringify(data));
+                        localStorage.setItem('rétréints_settings', JSON.stringify(settings));
+                        localStorage.setItem('retreints_timestamp', cloudData.timestamp);
+                        
+                        // Update UI
+                        updateStats();
+                        renderTable();
+                        loadSettings();
+                        
+                        console.log('✅ Données chargées depuis le cloud');
+                        showSyncStatus('✅ Données synchronisées depuis le cloud', 'success');
+                    }
+                }
+                
+                lastSyncTime = new Date();
+                updateSyncUI('synced');
+                
+            } catch (error) {
+                console.error('❌ Erreur de chargement:', error);
+                updateSyncUI('offline');
+            }
+        }
+
+        async function manualSync() {
+            showSyncStatus('🔄 Synchronisation en cours...', 'info');
+            await syncToCloud();
+            await syncFromCloud();
+            showSyncStatus('✅ Synchronisation terminée !', 'success');
+        }
+
+        function updateSyncUI(status) {
+            const syncIcon = document.getElementById('syncIcon');
+            const syncText = document.getElementById('syncText');
+            const cloudBannerIcon = document.getElementById('cloudBannerIcon');
+            const cloudBannerTitle = document.getElementById('cloudBannerTitle');
+            const cloudBannerText = document.getElementById('cloudBannerText');
+            
+            switch(status) {
+                case 'syncing':
+                    syncIcon.textContent = '🔄';
+                    syncIcon.classList.add('syncing');
+                    syncText.textContent = 'Synchronisation...';
+                    break;
+                case 'synced':
+                    syncIcon.textContent = '☁️';
+                    syncIcon.classList.remove('syncing');
+                    syncText.textContent = 'Synchronisé';
+                    if (cloudBannerIcon) {
+                        cloudBannerIcon.textContent = '✅';
+                        cloudBannerTitle.textContent = 'Synchronisation Cloud Active';
+                        cloudBannerText.textContent = lastSyncTime ? 
+                            `Dernière sync: ${lastSyncTime.toLocaleTimeString('fr-FR')}` : 
+                            'Vos données sont synchronisées entre tous vos appareils';
+                    }
+                    break;
+                case 'error':
+                    syncIcon.textContent = '⚠️';
+                    syncIcon.classList.remove('syncing');
+                    syncText.textContent = 'Erreur de sync';
+                    if (cloudBannerIcon) {
+                        cloudBannerIcon.textContent = '⚠️';
+                        cloudBannerTitle.textContent = 'Erreur de Synchronisation';
+                        cloudBannerText.textContent = 'Impossible de se connecter au cloud. Vos données sont sauvegardées localement.';
+                    }
+                    break;
+                case 'offline':
+                    syncIcon.textContent = '📵';
+                    syncIcon.classList.remove('syncing');
+                    syncText.textContent = 'Hors ligne';
+                    break;
+            }
+        }
+
+        function showSyncStatus(message, type) {
+            // Create temporary notification
+            const notification = document.createElement('div');
+            notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                type === 'warning' ? 'bg-orange-500' :
+                'bg-blue-500'
+            } text-white`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function viewSyncHistory() {
+            const history = `📜 Historique de Synchronisation\n\n` +
+                `Dernière synchronisation: ${lastSyncTime ? lastSyncTime.toLocaleString('fr-FR') : 'Jamais'}\n` +
+                `Synchronisation automatique: ${settings.autoSync ? 'Activée' : 'Désactivée'}\n` +
+                `Nombre d'enregistrements: ${data.length}\n` +
+                `Taille des données: ${(JSON.stringify(data).length / 1024).toFixed(2)} KB`;
+            
+            alert(history);
+        }
+
+        // ============ END CLOUD SYNC FUNCTIONS ============
 
         // Function to toggle dark mode
         function toggleDarkMode() {
@@ -528,7 +800,7 @@
 
 
         // Charger les données au démarrage
-        window.onload = function() {
+        window.onload = async function() {
             // Load dark mode preference first to apply styles before content renders
             const savedDarkMode = localStorage.getItem('darkMode');
             if (savedDarkMode === 'enabled' || (savedDarkMode === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -544,6 +816,10 @@
             if (savedSettings) {
                 settings = { ...settings, ...JSON.parse(savedSettings) };
             }
+            
+            // Initialize cloud sync
+            await initCloudSync();
+            
             showTab('accueil'); // This will call renderStats and other functions
             updateStats();
             renderTable();
@@ -556,6 +832,7 @@
             document.getElementById('tempsSeraap').value = settings.tempsSeraap || '';
             document.getElementById('objectifAttp').value = settings.objectifAttp || '';
             document.getElementById('objectifSeraap').value = settings.objectifSeraap || '';
+            document.getElementById('autoSyncToggle').checked = settings.autoSync !== false;
             renderOperateursList();
             renderTypeArretsList();
             renderEquipesList();
@@ -563,28 +840,34 @@
         }
 
         // Sauvegarder les paramètres
-        function saveSettings() {
+        async function saveSettings() {
             localStorage.setItem('rétréints_settings', JSON.stringify(settings));
+            localStorage.setItem('retreints_timestamp', new Date().toISOString());
+            
+            // Sync to cloud if enabled
+            if (settings.autoSync) {
+                await syncToCloud();
+            }
         }
 
         // Temps de production
-        function saveTempsProduction() {
-            settings.tempsAttp = parseFloat(document.getElementById('tempsAttp').value) || 0; // Default to 0 if not set, to avoid division by zero
-            settings.tempsSeraap = parseFloat(document.getElementById('tempsSeraap').value) || 0; // Default to 0
-            saveSettings();
+        async function saveTempsProduction() {
+            settings.tempsAttp = parseFloat(document.getElementById('tempsAttp').value) || 0;
+            settings.tempsSeraap = parseFloat(document.getElementById('tempsSeraap').value) || 0;
+            await saveSettings();
             alert('✅ Temps de production enregistrés !');
         }
 
         // Objectifs
-        function saveObjectifs() {
+        async function saveObjectifs() {
             settings.objectifAttp = parseInt(document.getElementById('objectifAttp').value) || 500;
             settings.objectifSeraap = parseInt(document.getElementById('objectifSeraap').value) || 400;
-            saveSettings();
+            await saveSettings();
             alert('✅ Objectifs enregistrés !');
         }
 
         // Gestion des opérateurs
-        function addOperateur() {
+        async function addOperateur() {
             const input = document.getElementById('newOperateur');
             const nom = input.value.trim();
             if (!nom) {
@@ -596,16 +879,16 @@
                 return;
             }
             settings.operateurs.push(nom);
-            saveSettings();
+            await saveSettings();
             input.value = '';
             renderOperateursList();
             updateFormDropdowns();
         }
 
-        function removeOperateur(nom) {
+        async function removeOperateur(nom) {
             if (confirm(`Supprimer l'opérateur "${nom}" ?`)) {
                 settings.operateurs = settings.operateurs.filter(o => o !== nom);
-                saveSettings();
+                await saveSettings();
                 renderOperateursList();
                 updateFormDropdowns();
             }
@@ -624,7 +907,7 @@
         }
 
         // Gestion des types d'arrêts
-        function addTypeArret() {
+        async function addTypeArret() {
             const input = document.getElementById('newTypeArret');
             const type = input.value.trim();
             if (!type) {
@@ -636,16 +919,16 @@
                 return;
             }
             settings.typesArret.push(type);
-            saveSettings();
+            await saveSettings();
             input.value = '';
             renderTypeArretsList();
             updateFormDropdowns();
         }
 
-        function removeTypeArret(type) {
+        async function removeTypeArret(type) {
             if (confirm(`Supprimer le type d'arrêt "${type}" ?`)) {
                 settings.typesArret = settings.typesArret.filter(t => t !== type);
-                saveSettings();
+                await saveSettings();
                 renderTypeArretsList();
                 updateFormDropdowns();
             }
@@ -664,7 +947,7 @@
         }
 
         // Gestion des équipes
-        function addEquipe() {
+        async function addEquipe() {
             const input = document.getElementById('newEquipe');
             const equipe = input.value.trim();
             if (!equipe) {
@@ -676,20 +959,20 @@
                 return;
             }
             settings.equipes.push(equipe);
-            saveSettings();
+            await saveSettings();
             input.value = '';
             renderEquipesList();
             updateFormDropdowns();
         }
 
-        function removeEquipe(equipe) {
+        async function removeEquipe(equipe) {
             if (settings.equipes.length <= 1) {
                 alert('Vous devez avoir au moins une équipe');
                 return;
             }
             if (confirm(`Supprimer l'équipe "${equipe}" ?`)) {
                 settings.equipes = settings.equipes.filter(e => e !== equipe);
-                saveSettings();
+                await saveSettings();
                 renderEquipesList();
                 updateFormDropdowns();
             }
@@ -711,16 +994,16 @@
         function updateFormDropdowns() {
             // Types d'arrêts
             const typeArretSelect = document.getElementById('typeArret');
-            const currentSelectedType = typeArretSelect.value; // Store current value to re-select
+            const currentSelectedType = typeArretSelect.value;
             typeArretSelect.innerHTML = '<option value="">-- Sélectionner --</option>' + 
                 settings.typesArret.map(type => `<option value="${type}">${type}</option>`).join('');
-            typeArretSelect.value = currentSelectedType; // Restore current value
+            typeArretSelect.value = currentSelectedType;
 
             // Équipes
             const equipeSelect = document.getElementById('equipe');
-            const currentSelectedEquipe = equipeSelect.value; // Store current value to re-select
+            const currentSelectedEquipe = equipeSelect.value;
             equipeSelect.innerHTML = settings.equipes.map(eq => `<option value="${eq}">${eq}</option>`).join('');
-            equipeSelect.value = currentSelectedEquipe; // Restore current value
+            equipeSelect.value = currentSelectedEquipe;
         }
 
         // Backup complet
@@ -739,7 +1022,7 @@
         }
 
         // Réinitialiser les paramètres
-        function resetAllSettings() {
+        async function resetAllSettings() {
             if (confirm('⚠️ Réinitialiser tous les paramètres aux valeurs par défaut ?\n(Les données de production seront conservées)')) {
                 settings = {
                     tempsAttp: 12,
@@ -748,9 +1031,10 @@
                     typesArret: ['Panne', 'Réglage', 'Changement outil', 'Pause', 'Attente matière', 'Autre'],
                     equipes: ['Matin', 'Après-midi'],
                     objectifAttp: 500,
-                    objectifSeraap: 400
+                    objectifSeraap: 400,
+                    autoSync: true
                 };
-                saveSettings();
+                await saveSettings();
                 loadSettings();
                 alert('✅ Paramètres réinitialisés !');
             }
@@ -764,28 +1048,20 @@
             const isDarkMode = document.documentElement.classList.contains('dark');
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                // 1. Remove ALL active-state classes (text, border, background)
                 btn.classList.remove(
-                    'text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50', // Light mode active
-                    'dark:text-indigo-400', 'bg-gray-700' // Dark mode active
+                    'text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50',
+                    'dark:text-indigo-400', 'bg-gray-700'
                 );
-
-                // 2. Remove ALL hover classes
                 btn.classList.remove(
-                    'hover:bg-gray-50', 'dark:hover:bg-gray-800', // Inactive hover defaults
-                    'hover:bg-indigo-50', 'hover:bg-gray-700' // Active hover states
+                    'hover:bg-gray-50', 'dark:hover:bg-gray-800',
+                    'hover:bg-indigo-50', 'hover:bg-gray-700'
                 );
-                
-                // 3. Apply INACTIVE state default text color for current theme
-                // Ensure default text colors are applied based on theme for inactive tabs
-                btn.classList.remove('text-gray-600', 'dark:text-gray-300'); // Clean slate for text color
+                btn.classList.remove('text-gray-600', 'dark:text-gray-300');
                 if (isDarkMode) {
                     btn.classList.add('dark:text-gray-300');
                 } else {
                     btn.classList.add('text-gray-600');
                 }
-
-                // 4. Apply INACTIVE state default hover color for current theme
                 if (isDarkMode) {
                     btn.classList.add('dark:hover:bg-gray-800');
                 } else {
@@ -794,28 +1070,19 @@
             });
             
             const activeTabBtn = document.getElementById('tab-' + tabName);
-            
-            // 5. Override for the ACTIVE tab button: remove inactive states
             activeTabBtn.classList.remove(
-                'text-gray-600', 'dark:text-gray-300', // Inactive text colors
-                'hover:bg-gray-50', 'dark:hover:bg-gray-800' // Inactive hover colors
+                'text-gray-600', 'dark:text-gray-300',
+                'hover:bg-gray-50', 'dark:hover:bg-gray-800'
             );
-
-            // 6. Apply ACTIVE state styles
-            activeTabBtn.classList.add('border-b-2', 'border-indigo-600'); // Common active border
+            activeTabBtn.classList.add('border-b-2', 'border-indigo-600');
 
             if (isDarkMode) {
-                // In dark mode, active tab text is dark:text-indigo-400
                 activeTabBtn.classList.add('dark:text-indigo-400', 'bg-gray-700');
-                // Active hover in dark mode (keep the active background on hover)
                 activeTabBtn.classList.add('hover:bg-gray-700');
             } else {
-                // In light mode, active tab text is text-indigo-600
                 activeTabBtn.classList.add('bg-indigo-50');
-                // Active hover in light mode (keep the active background on hover)
                 activeTabBtn.classList.add('hover:bg-indigo-50');
             }
-
 
             if (tabName === 'stats') {
                 renderStats();
@@ -825,7 +1092,7 @@
             }
             if (tabName === 'saisie') {
                 updateOperateursDatalist();
-                window.scrollTo(0, 0); // Scroll to the top when 'saisie' tab is opened
+                window.scrollTo(0, 0);
             }
         }
 
@@ -861,7 +1128,7 @@
         }
 
         // Sauvegarder les données
-        function saveData() {
+        async function saveData() {
             const form = {
                 date: document.getElementById('date').value,
                 machine: document.getElementById('machine').value,
@@ -894,10 +1161,17 @@
             }
 
             localStorage.setItem('rétréints', JSON.stringify(data));
+            localStorage.setItem('retreints_timestamp', new Date().toISOString());
+            
+            // Sync to cloud
+            if (settings.autoSync) {
+                await syncToCloud();
+            }
+            
             resetForm();
             updateStats();
             renderTable();
-            alert('✅ Enregistrement réussi !'); // Keep the alert
+            alert('✅ Enregistrement réussi !');
         }
 
         // Annuler le formulaire
@@ -968,7 +1242,7 @@
         }
 
         // Supprimer toutes les données
-        function deleteAllData() {
+        async function deleteAllData() {
             if (data.length === 0) {
                 alert('❌ Aucune donnée à supprimer');
                 return;
@@ -980,7 +1254,7 @@
             
             if (!response) {
                 alert('Opération annulée. Les données n\'ont pas été supprimées.');
-                return; // Annulation
+                return;
             }
 
             // Créer une sauvegarde automatique
@@ -996,27 +1270,40 @@
             link.download = `rétréints_backup_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
 
-            // Attendre un peu pour que le téléchargement démarre
-            setTimeout(() => {
+            setTimeout(async () => {
                 const finalConfirm = confirm(`✅ Sauvegarde créée !\n\n🗑️ Confirmer la suppression de ${data.length} enregistrement(s) ?\n\nCette action est IRRÉVERSIBLE.`);
                 
                 if (finalConfirm) {
                     data = [];
                     localStorage.setItem('rétréints', JSON.stringify(data));
+                    localStorage.setItem('retreints_timestamp', new Date().toISOString());
+                    
+                    // Sync to cloud
+                    if (settings.autoSync) {
+                        await syncToCloud();
+                    }
+                    
                     updateStats();
                     renderTable();
                     alert('✅ Toutes les données ont été supprimées.\n\nLa sauvegarde a été téléchargée.');
                 } else {
-                    alert('Opération annulée. Les données n\'ont pas été supprimées.'); // Added for clarity
+                    alert('Opération annulée. Les données n\'ont pas été supprimées.');
                 }
             }, 500);
         }
 
         // Supprimer un enregistrement
-        function deleteData(id) {
+        async function deleteData(id) {
             if (confirm('Supprimer cet enregistrement ?')) {
                 data = data.filter(d => d.id !== id);
                 localStorage.setItem('rétréints', JSON.stringify(data));
+                localStorage.setItem('retreints_timestamp', new Date().toISOString());
+                
+                // Sync to cloud
+                if (settings.autoSync) {
+                    await syncToCloud();
+                }
+                
                 updateStats();
                 renderTable();
             }
@@ -1030,7 +1317,6 @@
                 return;
             }
 
-            // Tri des données par date (ordre chronologique décroissant: du plus récent au plus ancien)
             const sortedData = [...data].sort((a, b) => {
                 return new Date(b.date) - new Date(a.date);
             });
@@ -1059,9 +1345,8 @@
         // Filtrer le tableau
         function filterTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
-            // Important: filter on original data, then render sorted
             const filteredData = data.filter(item => {
-                const displayDate = convertDateToFR(item.date).toLowerCase(); // Convert date to FR format for searching
+                const displayDate = convertDateToFR(item.date).toLowerCase();
                 return (
                     displayDate.includes(search) ||
                     item.machine.toLowerCase().includes(search) ||
@@ -1070,9 +1355,9 @@
                     item.operateur.toLowerCase().includes(search) ||
                     item.quantite.toString().includes(search) ||
                     item.numLot.toString().includes(search) ||
-                    (item.commentaire && item.commentaire.toLowerCase().includes(search)) || // Check if exists
-                    (item.motifArret && item.motifArret.toLowerCase().includes(search)) ||   // Check if exists
-                    (item.typeArret && item.typeArret.toLowerCase().includes(search))       // Check if exists
+                    (item.commentaire && item.commentaire.toLowerCase().includes(search)) ||
+                    (item.motifArret && item.motifArret.toLowerCase().includes(search)) ||
+                    (item.typeArret && item.typeArret.toLowerCase().includes(search))
                 );
             });
 
@@ -1082,7 +1367,6 @@
                 return;
             }
 
-            // Tri des données filtrées par date (ordre chronologique décroissant)
             const sortedFilteredData = [...filteredData].sort((a, b) => {
                 return new Date(b.date) - new Date(a.date);
             });
@@ -1193,31 +1477,28 @@
             // KPI Calculations
             const kpiData = {
                 ATTP: {
-                    totalOpeningTime: 0, // in seconds
-                    totalStopTime: 0,    // in seconds
-                    totalProduced: 0, // Good quantity
-                    totalRejects: 0 // Rejected quantity
+                    totalOpeningTime: 0,
+                    totalStopTime: 0,
+                    totalProduced: 0,
+                    totalRejects: 0
                 },
                 SERAAP: {
-                    totalOpeningTime: 0, // in seconds
-                    totalStopTime: 0,    // in seconds
-                    totalProduced: 0, // Good quantity
-                    totalRejects: 0 // Rejected quantity
+                    totalOpeningTime: 0,
+                    totalStopTime: 0,
+                    totalProduced: 0,
+                    totalRejects: 0
                 }
             };
 
-            // Data for charts
-            const dailyProductionMap = new Map(); // date -> total_quantity
-            const machineProductionMap = new Map(); // machine -> total_quantity
-
+            const dailyProductionMap = new Map();
+            const machineProductionMap = new Map();
 
             data.forEach(item => {
-                const machine = item.machine; // 'ATTP' or 'SERAAP'
+                const machine = item.machine;
                 const quantity = parseInt(item.quantite) || 0;
                 const rejects = parseInt(item.quantiteRebus) || 0;
                 const date = item.date;
 
-                // Aggregate for KPIs
                 if (kpiData[machine]) {
                     let dailyOpeningTimeMinutes = timeToMinutes(item.dureePoste || '07:00'); 
                     if (item.heuresSup) {
@@ -1229,10 +1510,7 @@
                     kpiData[machine].totalRejects += rejects;
                 }
 
-                // Aggregate for Daily Production Chart (total produced + rejects)
                 dailyProductionMap.set(date, (dailyProductionMap.get(date) || 0) + quantity + rejects);
-
-                // Aggregate for Machine Production Chart (total produced + rejects)
                 machineProductionMap.set(machine, (machineProductionMap.get(machine) || 0) + quantity + rejects);
             });
 
@@ -1249,7 +1527,7 @@
                 const totalStopTime = kpiObj.totalStopTime;
                 const totalProduced = kpiObj.totalProduced;
                 const totalRejects = kpiObj.totalRejects;
-                const totalItemsManufactured = totalProduced + totalRejects; // Total items that went through production
+                const totalItemsManufactured = totalProduced + totalRejects;
 
                 let disponibilite = 0;
                 let performance = 0;
@@ -1257,13 +1535,11 @@
                 let tauxRebus = 0;
                 let trs = 0;
 
-                // Disponibilité
                 if (totalOpeningTime > 0) {
                     const tempsCharge = totalOpeningTime - totalStopTime;
                     disponibilite = (tempsCharge / totalOpeningTime);
                     disponibilite = Math.max(0, Math.min(1, disponibilite));
                     
-                    // Performance
                     if (tempsCharge > 0) {
                         const tempsNetFonctionnementIdeal = totalProduced * tempsCycleIdeal;
                         performance = tempsNetFonctionnementIdeal / tempsCharge;
@@ -1271,20 +1547,16 @@
                     }
                 }
                 
-                // Qualité
                 if (totalItemsManufactured > 0) {
                     qualite = totalProduced / totalItemsManufactured;
                     qualite = Math.max(0, Math.min(1, qualite));
                 }
 
-                // Taux de Rebus
                 if (totalItemsManufactured > 0) {
                     tauxRebus = totalRejects / totalItemsManufactured;
                     tauxRebus = Math.max(0, Math.min(1, tauxRebus));
                 }
 
-
-                // TRS
                 trs = disponibilite * performance * qualite;
                 trs = Math.max(0, Math.min(1, trs));
 
@@ -1300,7 +1572,6 @@
             const kpisAttp = calculateKpis('Attp', kpiData.ATTP);
             const kpisSeraap = calculateKpis('Seraap', kpiData.SERAAP);
 
-            // Update the UI with KPI values
             document.getElementById('kpi-attp-dispo').textContent = kpisAttp.disponibilite;
             document.getElementById('kpi-attp-perf').textContent = kpisAttp.performance;
             document.getElementById('kpi-attp-quali').textContent = kpisAttp.qualite;
@@ -1322,17 +1593,17 @@
         function getChartColors() {
             const isDarkMode = document.documentElement.classList.contains('dark');
             return {
-                fontColor: isDarkMode ? '#e2e8f0' : '#4a5568', // gray-200 / gray-700
-                gridColor: isDarkMode ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)', // slate-400 / gray-200
-                tooltipBg: isDarkMode ? '#374151' : '#ffffff', // gray-700 / white
-                tooltipBorder: isDarkMode ? '#4b5563' : '#e5e7eb', // gray-600 / gray-200
-                lineColor: isDarkMode ? '#818cf8' : '#4f46e5', // indigo-300 / indigo-600
-                lineFillColor: isDarkMode ? 'rgba(129, 140, 248, 0.2)' : 'rgba(79, 70, 229, 0.2)', // Light indigo for fill
+                fontColor: isDarkMode ? '#e2e8f0' : '#4a5568',
+                gridColor: isDarkMode ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)',
+                tooltipBg: isDarkMode ? '#374151' : '#ffffff',
+                tooltipBorder: isDarkMode ? '#4b5563' : '#e5e7eb',
+                lineColor: isDarkMode ? '#818cf8' : '#4f46e5',
+                lineFillColor: isDarkMode ? 'rgba(129, 140, 248, 0.2)' : 'rgba(79, 70, 229, 0.2)',
                 barColors: [
-                    isDarkMode ? '#60a5fa' : '#3b82f6', // blue-400 / blue-500
-                    isDarkMode ? '#a78bfa' : '#8b5cf6'  // purple-400 / purple-500
+                    isDarkMode ? '#60a5fa' : '#3b82f6',
+                    isDarkMode ? '#a78bfa' : '#8b5cf6'
                 ],
-                labelColor: isDarkMode ? '#cbd5e1' : '#64748b' // slate-300 / slate-500
+                labelColor: isDarkMode ? '#cbd5e1' : '#64748b'
             };
         }
 
@@ -1348,11 +1619,9 @@
                 return;
             }
             const colors = getChartColors();
-            const isDarkMode = document.documentElement.classList.contains('dark'); // Re-evaluate here for direct access in options if needed
 
-            // Sort daily data by date
             const sortedDates = Array.from(dailyDataMap.keys()).sort();
-            const labels = sortedDates.map(date => convertDateToFR(date)); // Convert date format for display
+            const labels = sortedDates.map(date => convertDateToFR(date));
             const dataValues = sortedDates.map(date => dailyDataMap.get(date));
 
             if (chartInstances.dailyProductionChart) {
@@ -1367,10 +1636,10 @@
                         label: 'Quantité Totale Produite',
                         data: dataValues,
                         borderColor: colors.lineColor,
-                        backgroundColor: colors.lineFillColor, // Use the pre-defined rgba color
-                        tension: 0.3, // Curve the lines slightly
+                        backgroundColor: colors.lineFillColor,
+                        tension: 0.3,
                         fill: true,
-                        pointRadius: 3, // Make points visible
+                        pointRadius: 3,
                         pointHoverRadius: 5
                     }]
                 },
@@ -1384,13 +1653,13 @@
                         },
                         legend: {
                             labels: {
-                                color: colors.fontColor, // Legend font color
+                                color: colors.fontColor,
                                 font: {
-                                    size: 12 // Smaller legend font for mobile
+                                    size: 12
                                 }
                             }
                         },
-                        tooltip: { // Customize tooltip for dark mode
+                        tooltip: {
                             backgroundColor: colors.tooltipBg,
                             borderColor: colors.tooltipBorder,
                             borderWidth: 1,
@@ -1410,12 +1679,12 @@
                                 color: colors.gridColor
                             },
                             ticks: {
-                                color: colors.fontColor, // X-axis label color
+                                color: colors.fontColor,
                                 font: {
-                                    size: 10 // Smaller font for x-axis ticks
+                                    size: 10
                                 },
-                                autoSkip: true, // Automatically skip labels to prevent overlap
-                                maxRotation: 45, // Rotate labels up to 45 degrees if necessary
+                                autoSkip: true,
+                                maxRotation: 45,
                                 minRotation: 0
                             }
                         },
@@ -1425,9 +1694,9 @@
                                 color: colors.gridColor
                             },
                             ticks: {
-                                color: colors.fontColor, // Y-axis label color
+                                color: colors.fontColor,
                                 font: {
-                                    size: 10 // Smaller font for y-axis ticks
+                                    size: 10
                                 }
                             }
                         }
@@ -1448,7 +1717,6 @@
                 return;
             }
             const colors = getChartColors();
-            const isDarkMode = document.documentElement.classList.contains('dark'); // Re-evaluate here for direct access in options if needed
 
             if (chartInstances.machineProductionChart) {
                 chartInstances.machineProductionChart.destroy();
@@ -1462,7 +1730,7 @@
                         label: 'Quantité Totale',
                         data: Array.from(machineDataMap.values()),
                         backgroundColor: colors.barColors,
-                        borderColor: colors.barColors, // Use same colors for border
+                        borderColor: colors.barColors,
                         borderWidth: 1
                     }]
                 },
@@ -1475,9 +1743,9 @@
                             text: 'Répartition de la Production par Machine'
                         },
                         legend: {
-                            display: false // Hide legend for single dataset bar chart
+                            display: false
                         },
-                        tooltip: { // Customize tooltip for dark mode
+                        tooltip: {
                             backgroundColor: colors.tooltipBg,
                             borderColor: colors.tooltipBorder,
                             borderWidth: 1,
@@ -1499,7 +1767,7 @@
                             ticks: {
                                 color: colors.fontColor,
                                 font: {
-                                    size: 10 // Smaller font for x-axis ticks
+                                    size: 10
                                 }
                             }
                         },
@@ -1511,7 +1779,7 @@
                             ticks: {
                                 color: colors.fontColor,
                                 font: {
-                                    size: 10 // Smaller font for y-axis ticks
+                                    size: 10
                                 }
                             }
                         }
@@ -1528,13 +1796,11 @@
                 return;
             }
 
-            // Structure: ID, DATE, MACHINE, N° ETUDE, EQUIPE, OPERATEUR/TRICE, QUANTITE, N° LOT, 
-            //            CHGT TARAUD, TPS ARRET, MOTIF ARRET, REBUS, TYPE D'ARRET, COMMENTAIRE, DUREE POSTE, HEURES SUP
             const headers = ['ID', 'DATE', 'MACHINE', 'N° ETUDE', 'EQUIPE', 'OPERATEUR/TRICE', 'QUANTITE', 'N° LOT', 'CHGT TARAUD', 'TPS ARRET', 'MOTIF ARRET', 'REBUS', 'TYPE D\'ARRET', 'COMMENTAIRE', 'DUREE POSTE', 'HEURES SUP'];
             
             const rows = data.map(d => [
                 d.id,
-                convertDateToFR(d.date), // Use FR format for CSV export
+                convertDateToFR(d.date),
                 d.machine, 
                 d.numEtude, 
                 d.equipe, 
@@ -1551,7 +1817,6 @@
                 d.heuresSup || ''
             ]);
             
-            // Utiliser tabulation comme séparateur (compatible Excel)
             const csv = [headers, ...rows].map(row => row.join('\t')).join('\n');
             
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -1578,13 +1843,12 @@
         // Convertir date JJ/MM/AAAA vers AAAA-MM-JJ
         function convertDateToISO(dateStr) {
             if (!dateStr) return '';
-            const parts = dateStr.split(/[-\/]/); // Handle both - and / as separators
+            const parts = dateStr.split(/[-\/]/);
             if (parts.length === 3) {
-                // Assuming DD/MM/YYYY or DD-MM-YYYY input for conversion to YYYY-MM-DD
-                if (parts[2].length === 4) { // Likely YYYY-MM-DD or DD-MM-YYYY (full year)
-                     if (parseInt(parts[0]) > 12) { // Likely DD-MM-YYYY (Day part > 12)
+                if (parts[2].length === 4) {
+                     if (parseInt(parts[0]) > 12) {
                          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                     } else { // Could be MM-DD-YYYY or DD-MM-YYYY, default to current format
+                     } else {
                          return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
                      }
                 }
@@ -1596,7 +1860,7 @@
         // Convertir date AAAA-MM-JJ vers JJ-MM-AAAA
         function convertDateToFR(dateStr) {
             if (!dateStr) return '';
-            const parts = dateStr.split('-'); // Expecting YYYY-MM-DD
+            const parts = dateStr.split('-');
             if (parts.length === 3) {
                 return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
             }
@@ -1609,7 +1873,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const text = e.target.result;
                     const lines = text.split('\n').filter(line => line.trim());
@@ -1619,7 +1883,6 @@
                         return;
                     }
 
-                    // Ignorer la première ligne (en-têtes)
                     const dataLines = lines.slice(1);
                     const imported = [];
                     const duplicates = [];
@@ -1627,7 +1890,6 @@
 
                     for (let i = 0; i < dataLines.length; i++) {
                         const line = dataLines[i];
-                        // Séparateur: tabulation ou point-virgule
                         const values = line.split(/\t|;/).map(v => v.trim().replace(/^"|"$/g, ''));
                         
                         if (values.length < 8) {
@@ -1635,10 +1897,7 @@
                             continue;
                         }
 
-                        // Structure CSV: ID, DATE, MACHINE, N° ETUDE, EQUIPE, OPERATEUR/TRICE, QUANTITE, N° LOT, 
-                        //                CHGT TARAUD, TPS ARRET, MOTIF ARRET, REBUS, TYPE D'ARRET, COMMENTAIRE, DUREE POSTE, HEURES SUP
-                        
-                        const dateISO = convertDateToISO(values[1]); // Ensure date is ISO format for internal storage
+                        const dateISO = convertDateToISO(values[1]);
                         
                         const newItem = {
                             date: dateISO,
@@ -1658,13 +1917,11 @@
                             id: Date.now() + Math.random()
                         };
 
-                        // Validation des champs obligatoires
                         if (!newItem.date || !newItem.numEtude || !newItem.operateur || !newItem.numLot) {
-                            errors.push(`Ligne ${i + 2}: Champs obligatoires manquants (${values[1]}, ${values[3]}, ${values[5]}, ${values[7] || 'N/A pour NumLot'})`);
+                            errors.push(`Ligne ${i + 2}: Champs obligatoires manquants`);
                             continue;
                         }
 
-                        // Contrôle de doublon
                         const isDuplicate = data.some(existing => 
                             existing.date === newItem.date &&
                             existing.machine === newItem.machine &&
@@ -1681,7 +1938,6 @@
                         imported.push(newItem);
                     }
 
-                    // Afficher le résumé
                     let message = `📊 Résumé de l'import:\n\n`;
                     message += `✅ ${imported.length} enregistrement(s) valide(s)\n`;
                     
@@ -1695,33 +1951,19 @@
 
                     if (imported.length === 0) {
                         alert(message + '\nAucune donnée à importer.');
-                        if (duplicates.length > 0) {
-                            console.log('Doublons détectés:', duplicates);
-                        }
-                        if (errors.length > 0) {
-                            console.log('Erreurs:', errors);
-                        }
                         return;
-                    }
-
-                    message += `\n📝 Détails:\n`;
-                    if (duplicates.length > 0) {
-                        message += `\nDoublons ignorés:\n${duplicates.slice(0, 3).join('\n')}`;
-                        if (duplicates.length > 3) {
-                            message += `\n... et ${duplicates.length - 3} autre(s)`;
-                        }
-                    }
-                    
-                    if (errors.length > 0) {
-                        message += `\n\nErreurs:\n${errors.slice(0, 3).join('\n')}`;
-                        if (errors.length > 3) {
-                            message += `\n... et ${errors.length - 3} autre(s)`;
-                        }
                     }
 
                     if (confirm(message + '\n\nConfirmer l\'import ?')) {
                         data = [...data, ...imported];
                         localStorage.setItem('rétréints', JSON.stringify(data));
+                        localStorage.setItem('retreints_timestamp', new Date().toISOString());
+                        
+                        // Sync to cloud
+                        if (settings.autoSync) {
+                            await syncToCloud();
+                        }
+                        
                         updateStats();
                         renderTable();
                         
@@ -1736,7 +1978,7 @@
                     }
                 } catch (err) {
                     console.error(err);
-                    alert('❌ Erreur lors de l\'import du CSV.\n\n' + err.message + '\n\nVérifiez le format du fichier.\nStructure attendue (séparée par tabulations):\nID	DATE	MACHINE	N° ETUDE	EQUIPE	OPERATEUR/TRICE	QUANTITE	N° LOT	CHGT TARAUD	TPS ARRET	MOTIF ARRET	REBUS	TYPE D\'ARRET	COMMENTAIRE	DUREE POSTE	HEURES SUP');
+                    alert('❌ Erreur lors de l\'import du CSV.\n\n' + err.message);
                 }
             };
             reader.readAsText(file, 'UTF-8');
@@ -1749,13 +1991,20 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
                     if (Array.isArray(imported)) {
                         if (confirm(`Importer ${imported.length} enregistrements ?`)) {
                             data = [...data, ...imported.map(item => ({ ...item, id: Date.now() + Math.random() }))];
                             localStorage.setItem('rétréints', JSON.stringify(data));
+                            localStorage.setItem('retreints_timestamp', new Date().toISOString());
+                            
+                            // Sync to cloud
+                            if (settings.autoSync) {
+                                await syncToCloud();
+                            }
+                            
                             updateStats();
                             renderTable();
                             alert('Import réussi !');
