@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire Rétreints</title>
+    <!-- Tailwind CSS CDN - including dark mode variants by default -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // Optional: If you want to configure Tailwind directly for dark mode class on html
+        tailwind.config = {
+            darkMode: 'class', // This tells Tailwind to use the 'dark' class on the html element
+            theme: {
+                extend: {},
+            },
+        };
+    </script>
+    <style>
+        /* Basic transition for smoother dark mode toggle */
+        body {
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+        /* Ensure elements without explicit dark: styles still inherit some dark colors */
+        .dark {
+            color-scheme: dark; /* Helps native form elements adjust */
+        }
+        .dark body,
+        .dark .bg-white,
+        .dark .bg-gray-50,
+        .dark .bg-gray-200,
+        .dark .tab-btn {
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+        /* Custom styles for the emoji icon */
+        #theme-toggle #theme-icon {
+            font-size: 1.5rem; /* Make emoji larger */
+            line-height: 1; /* Adjust line height to center */
+            display: block; /* Ensure it takes up space correctly */
+        }
+    </style>
+</head>
+<!-- Apply dark mode classes to html for initial background and text -->
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen text-gray-800 dark:from-gray-900 dark:to-gray-800 dark:text-gray-100">
+    
+    <!-- Header -->
+    <div class="bg-indigo-600 text-white shadow-lg dark:bg-indigo-800 dark:shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div> <!-- Group original header content -->
+                <h1 class="text-2xl font-bold">Formulaire Rétreints</h1>
+                <p class="text-indigo-200 text-sm dark:text-indigo-300">Gestion des opérations de production</p>
+            </div>
+            <!-- Dark Mode Toggle Icon (using a single emoji span) -->
+            <button id="theme-toggle" type="button" onclick="toggleDarkMode()" 
+                    class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                           text-white hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors duration-200">
+                <span id="theme-icon"></span> <!-- This span's content will change -->
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="bg-white shadow-md sticky top-0 z-10 dark:bg-gray-900 dark:shadow-xl">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button onclick="showTab('accueil')" id="tab-accueil" class="tab-btn px-6 py-3 font-medium transition-colors duration-300 ease-in-out">Accueil</button>
+                <button onclick="showTab('saisie')" id="tab-saisie" class="tab-btn px-6 py-3 font-medium transition-colors duration-300 ease-in-out">Saisie</button>
+                <button onclick="showTab('gestion')" id="tab-gestion" class="tab-btn px-6 py-3 font-medium transition-colors duration-300 ease-in-out">Gestion</button>
+                <button onclick="showTab('stats')" id="tab-stats" class="tab-btn px-6 py-3 font-medium transition-colors duration-300 ease-in-out">Statistiques</button>
+                <button onclick="showTab('parametrage')" id="tab-parametrage" class="tab-btn px-6 py-3 font-medium transition-colors duration-300 ease-in-out">⚙️ Paramétrage</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        
+        <!-- ACCUEIL -->
+        <div id="page-accueil" class="page-content">
+            <div class="bg-white rounded-lg shadow-md p-8 dark:bg-gray-800 dark:shadow-lg">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4 dark:text-gray-100">Bienvenue</h2>
+                <p class="text-gray-600 mb-6 dark:text-gray-300">Application de gestion des formulaires de rétreints</p>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
+                        <div class="text-3xl font-bold" id="stat-total">0</div>
+                        <div class="text-blue-100 text-sm">Total enregistrements</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
+                        <div class="text-3xl font-bold" id="stat-attp">0</div>
+                        <div class="text-green-100 text-sm">Machine ATTP</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
+                        <div class="text-3xl font-bold" id="stat-seraap">0</div>
+                        <div class="text-purple-100 text-sm">Machine SERAAP</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-lg shadow-lg">
+                        <div class="text-3xl font-bold" id="stat-quantite">0</div>
+                        <div class="text-orange-100 text-sm">Quantité totale</div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <button onclick="showTab('saisie')" class="bg-indigo-600 hover:bg-indigo-700 text-white p-6 rounded-lg shadow-md transition-all">
+                        <span class="text-lg font-semibold">➕ Nouvelle Saisie</span>
+                    </button>
+                    <button onclick="showTab('gestion')" class="bg-gray-600 hover:bg-gray-700 text-white p-6 rounded-lg shadow-md transition-all">
+                        <span class="text-lg font-semibold">📊 Voir les Données</span>
+                    </button>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-6 dark:bg-gray-700">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-gray-100">📥 Export / Import</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-all text-sm">
+                            ⬇️ Exporter CSV
+                        </button>
+                        <button onclick="exportJSON()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-all text-sm">
+                            ⬇️ Exporter JSON
+                        </button>
+                        <label class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition-all text-sm cursor-pointer text-center">
+                            ⬆️ Importer CSV
+                            <input type="file" id="importCSVFile" accept=".csv" onchange="importCSV()" class="hidden">
+                        </label>
+                        <label class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-all text-sm cursor-pointer text-center">
+                            ⬆️ Importer JSON
+                            <input type="file" id="importFile" accept=".json" onchange="importJSON()" class="hidden">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAISIE -->
+        <div id="page-saisie" class="page-content hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 dark:text-gray-100" id="form-title">Nouvelle Saisie</h2>
+                
+                <div class="space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Date *</label>
+                            <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Machine</label>
+                            <select id="machine" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                                <option value="ATTP">ATTP</option>
+                                <option value="SERAAP">SERAAP</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">N° Etude *</label>
+                            <input type="number" id="numEtude" placeholder="Ex: 25002804" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Équipe</label>
+                            <select id="equipe" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                                <option value="Matin">Matin</option>
+                                <option value="Après-midi">Après-midi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Opérateur/Trice *</label>
+                            <input type="text" id="operateur" placeholder="Ex: Christine (CB)" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required list="operateursDatalist">
+                            <datalist id="operateursDatalist">
+                            </datalist>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Quantité *</label>
+                            <input type="number" id="quantite" placeholder="Ex: 400" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">N° Lot *</label>
+                            <input type="number" id="numLot" placeholder="Ex: 12878" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Chgt Taraud</label>
+                            <input type="number" id="chgtTaraud" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Temps Arrêt</label>
+                            <input type="time" id="tpsArret" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" onchange="toggleArretFields()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Durée Poste</label>
+                            <input type="time" id="dureePoste" value="07:00" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Heures Sup</label>
+                            <input type="time" id="heuresSup" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                        </div>
+                    </div>
+
+                    <!-- Champs arrêt (affichés si temps arrêt saisi) -->
+                    <div id="arretFields" class="hidden border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3 dark:text-gray-100">⏸️ Détails de l'arrêt</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Type d'arrêt</label>
+                                <select id="typeArret" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                                    <option value="">-- Sélectionner --</option>
+                                    <option value="Panne">Panne</option>
+                                    <option value="Réglage">Réglage</option>
+                                    <option value="Changement outil">Changement outil</option>
+                                    <option value="Pause">Pause</option>
+                                    <option value="Attente matière">Attente matière</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Motif d'arrêt</label>
+                                <input type="text" id="motifArret" placeholder="Détails..." class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Case rebus -->
+                    <div class="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center mb-3">
+                            <input type="checkbox" id="hasRebus" class="w-4 h-4 text-indigo-600 rounded mr-2" onchange="toggleRebusField()">
+                            <label for="hasRebus" class="text-sm font-medium text-gray-700 dark:text-gray-300">Saisir une quantité de rebus</label>
+                        </div>
+                        <div id="rebusField" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Quantité de rebus</label>
+                            <input type="number" id="quantiteRebus" placeholder="Ex: 5" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                    </div>
+
+                    <!-- Commentaire -->
+                    <div class="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
+                        <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">💬 Commentaire / Remarque</label>
+                        <textarea id="commentaire" rows="3" placeholder="Observations, remarques particulières..." class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"></textarea>
+                    </div>
+
+                    <div class="flex space-x-3 pt-4">
+                        <button onclick="saveData()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-md font-medium transition-all">
+                            💾 Enregistrer
+                        </button>
+                        <button type="button" onclick="cancelForm()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-all dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                            ❌ Annuler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GESTION -->
+        <div id="page-gestion" class="page-content hidden">
+            <div class="bg-white rounded-lg shadow-md p-4 mb-4 dark:bg-gray-800 dark:shadow-lg">
+                <input type="text" id="searchInput" placeholder="🔍 Rechercher..." onkeyup="filterTable()" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-800 dark:shadow-lg">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Machine</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">N° Etude</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Équipe</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Opérateur</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Quantité</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">N° Lot</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTIQUES -->
+        <div id="page-stats" class="page-content hidden">
+            <div class="space-y-6">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                        <div class="text-sm text-gray-600 mb-1 dark:text-gray-300">Total</div>
+                        <div class="text-3xl font-bold text-indigo-600" id="stats-total">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                        <div class="text-sm text-gray-600 mb-1 dark:text-gray-300">Machine ATTP</div>
+                        <div class="text-3xl font-bold text-blue-600" id="stats-attp">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                        <div class="text-sm text-gray-600 mb-1 dark:text-gray-300">Machine SERAAP</div>
+                        <div class="text-3xl font-bold text-purple-600" id="stats-seraap">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                        <div class="text-sm text-gray-600 mb-1 dark:text-gray-300">Quantité Totale</div>
+                        <div class="text-3xl font-bold text-green-600" id="stats-quantite">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-gray-100">📊 Répartition par Machine</h3>
+                    <div id="machineStats" class="dark:text-gray-300"></div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-gray-100">👥 Top 5 Opérateurs</h3>
+                    <div id="operateurStats" class="dark:text-gray-300"></div>
+                </div>
+
+                <!-- NOUVELLE SECTION: KPIs -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">📈 Indicateurs Clés de Performance (KPIs)</h3>
+                    <div id="kpiStats" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPIs for ATTP -->
+                        <div>
+                            <h4 class="text-lg font-semibold text-blue-700 mb-3 dark:text-blue-400">Machine ATTP</h4>
+                            <div class="space-y-2 dark:text-gray-200">
+                                <p>Disponibilité: <span id="kpi-attp-dispo" class="font-bold">N/A</span></p>
+                                <p>Performance: <span id="kpi-attp-perf" class="font-bold">N/A</span></p>
+                                <p>Qualité: <span id="kpi-attp-quali" class="font-bold">N/A</span></p>
+                                <p>Taux de Rebus: <span id="kpi-attp-rebus" class="font-bold">N/A</span></p>
+                                <p class="pt-2 text-lg font-bold text-blue-800 dark:text-blue-300">TRS: <span id="kpi-attp-trs" class="font-bold">N/A</span></p>
+                            </div>
+                        </div>
+                        <!-- KPIs for SERAAP -->
+                        <div>
+                            <h4 class="text-lg font-semibold text-purple-700 mb-3 dark:text-purple-400">Machine SERAAP</h4>
+                            <div class="space-y-2 dark:text-gray-200">
+                                <p>Disponibilité: <span id="kpi-seraap-dispo" class="font-bold">N/A</span></p>
+                                <p>Performance: <span id="kpi-seraap-perf" class="font-bold">N/A</span></p>
+                                <p>Qualité: <span id="kpi-seraap-quali" class="font-bold">N/A</span></p>
+                                <p>Taux de Rebus: <span id="kpi-seraap-rebus" class="font-bold">N/A</span></p>
+                                <p class="pt-2 text-lg font-bold text-purple-800 dark:text-purple-300">TRS: <span id="kpi-seraap-trs" class="font-bold">N/A</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOUVELLE SECTION: Graphiques -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">📊 Graphiques de Production</h3>
+                    <div class="space-y-8">
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-700 mb-3 dark:text-gray-200">Tendance de Production Journalière</h4>
+                            <!-- Added a div wrapper with explicit height for Chart.js -->
+                            <div class="relative h-64 w-full bg-gray-50 p-4 rounded-md dark:bg-gray-700">
+                                <canvas id="dailyProductionChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-700 mb-3 dark:text-gray-200">Répartition de la Production par Machine</h4>
+                             <!-- Added a div wrapper with explicit height for Chart.js -->
+                            <div class="relative h-64 w-full bg-gray-50 p-4 rounded-md dark:bg-gray-700">
+                                <canvas id="machineProductionChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PARAMETRAGE -->
+        <div id="page-parametrage" class="page-content hidden">
+            <div class="space-y-6">
+                
+                <!-- Temps de production -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">⏱️ Temps de Production</h3>
+                    <p class="text-sm text-gray-600 mb-4 dark:text-gray-400">Définir le temps de production par pièce pour calculer les KPI (TRS, disponibilité, etc.)</p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Machine ATTP (secondes/pièce)</label>
+                            <input type="number" id="tempsAttp" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" placeholder="Ex: 12.5">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Machine SERAAP (secondes/pièce)</label>
+                            <input type="number" id="tempsSeraap" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" placeholder="Ex: 15">
+                        </div>
+                    </div>
+                    <button onclick="saveTempsProduction()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md">
+                        💾 Enregistrer
+                    </button>
+                </div>
+
+                <!-- Opérateurs -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">👥 Gestion des Opérateurs</h3>
+                    <p class="text-sm text-gray-600 mb-4 dark:text-gray-400">Liste des opérateurs pour l'autocomplétion dans le formulaire</p>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newOperateur" placeholder="Nom de l'opérateur..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                        <button onclick="addOperateur()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+                            ➕ Ajouter
+                        </button>
+                    </div>
+
+                    <div id="operateursList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <!-- Types d'arrêts -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">⏸️ Types d'Arrêts</h3>
+                    <p class="text-sm text-gray-600 mb-4 dark:text-gray-400">Personnaliser les types d'arrêts disponibles</p>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newTypeArret" placeholder="Type d'arrêt..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                        <button onclick="addTypeArret()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+                            ➕ Ajouter
+                        </button>
+                    </div>
+
+                    <div id="typeArretsList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <!-- Équipes -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">🕐 Gestion des Équipes</h3>
+                    <p class="text-sm text-gray-600 mb-4 dark:text-gray-400">Personnaliser les équipes de travail</p>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newEquipe" placeholder="Nom de l'équipe..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                        <button onclick="addEquipe()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+                            ➕ Ajouter
+                        </button>
+                    </div>
+
+                    <div id="equipesList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <!-- Objectifs -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">🎯 Objectifs de Production</h3>
+                    <p class="text-sm text-gray-600 mb-4 dark:text-gray-400">Définir les objectifs pour le calcul du taux de performance</p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Objectif quotidien ATTP (pièces)</label>
+                            <input type="number" id="objectifAttp" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" placeholder="Ex: 500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Objectif quotidien SERAAP (pièces)</label>
+                            <input type="number" id="objectifSeraap" class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" placeholder="Ex: 400">
+                        </div>
+                    </div>
+                    <button onclick="saveObjectifs()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md">
+                        💾 Enregistrer
+                    </button>
+                </div>
+                
+                <!-- Sauvegardes -->
+                <div class="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">💾 Gestion des Données</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <button onclick="backupAllData()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md">
+                            📦 Sauvegarder tout (Backup complet)
+                        </button>
+                        <button onclick="resetAllSettings()" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-md">
+                            🗑️ Réinitialiser les paramètres
+                        </button>
+                        <button onclick="deleteAllData()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md">
+                            🔥 Supprimer toutes les données
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+        let editingId = null;
+        let settings = {
+            tempsAttp: 12,
+            tempsSeraap: 15,
+            operateurs: ['Christine (CB)', 'Séverine (MS)'],
+            typesArret: ['Panne', 'Réglage', 'Changement outil', 'Pause', 'Attente matière', 'Autre'],
+            equipes: ['Matin', 'Après-midi'],
+            objectifAttp: 500,
+            objectifSeraap: 400
+        };
+
+        // Chart.js instances holder
+        const chartInstances = {};
+
+        // Helper function to convert HH:MM to minutes
+        function timeToMinutes(hhmm) {
+            if (!hhmm) return 0;
+            const parts = hhmm.split(':');
+            if (parts.length === 2) {
+                return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            }
+            return 0;
+        }
+
+        // Helper function to convert HH:MM to seconds
+        function timeToSeconds(hhmm) {
+            return timeToMinutes(hhmm) * 60;
+        }
+
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+            const htmlElement = document.documentElement;
+            htmlElement.classList.toggle('dark');
+            
+            const isDarkMode = htmlElement.classList.contains('dark');
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+            updateDarkModeToggleUI(isDarkMode);
+            // Re-apply tab styles after dark mode toggle to ensure consistency
+            const activeTab = document.querySelector('.tab-btn.border-indigo-600');
+            if (activeTab) {
+                showTab(activeTab.id.replace('tab-', ''));
+            }
+        }
+
+        // Function to update the dark mode toggle button UI (icon content)
+        function updateDarkModeToggleUI(isDarkMode) {
+            const themeIconSpan = document.getElementById('theme-icon');
+            
+            if (themeIconSpan) {
+                if (isDarkMode) {
+                    themeIconSpan.textContent = '☀️'; // Sun icon for dark mode (to switch to light)
+                } else {
+                    themeIconSpan.textContent = '🌙'; // Moon icon for light mode (to switch to dark)
+                }
+            }
+        }
+
+
+        // Charger les données au démarrage
+        window.onload = function() {
+            // Load dark mode preference first to apply styles before content renders
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === 'enabled' || (savedDarkMode === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+            updateDarkModeToggleUI(document.documentElement.classList.contains('dark')); // Initialize the icon
+
+            const saved = localStorage.getItem('rétréints');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+            const savedSettings = localStorage.getItem('rétréints_settings');
+            if (savedSettings) {
+                settings = { ...settings, ...JSON.parse(savedSettings) };
+            }
+            showTab('accueil'); // This will call renderStats and other functions
+            updateStats();
+            renderTable();
+            loadSettings();
+        };
+
+        // Charger les paramètres
+        function loadSettings() {
+            document.getElementById('tempsAttp').value = settings.tempsAttp || '';
+            document.getElementById('tempsSeraap').value = settings.tempsSeraap || '';
+            document.getElementById('objectifAttp').value = settings.objectifAttp || '';
+            document.getElementById('objectifSeraap').value = settings.objectifSeraap || '';
+            renderOperateursList();
+            renderTypeArretsList();
+            renderEquipesList();
+            updateFormDropdowns();
+        }
+
+        // Sauvegarder les paramètres
+        function saveSettings() {
+            localStorage.setItem('rétréints_settings', JSON.stringify(settings));
+        }
+
+        // Temps de production
+        function saveTempsProduction() {
+            settings.tempsAttp = parseFloat(document.getElementById('tempsAttp').value) || 0; // Default to 0 if not set, to avoid division by zero
+            settings.tempsSeraap = parseFloat(document.getElementById('tempsSeraap').value) || 0; // Default to 0
+            saveSettings();
+            alert('✅ Temps de production enregistrés !');
+        }
+
+        // Objectifs
+        function saveObjectifs() {
+            settings.objectifAttp = parseInt(document.getElementById('objectifAttp').value) || 500;
+            settings.objectifSeraap = parseInt(document.getElementById('objectifSeraap').value) || 400;
+            saveSettings();
+            alert('✅ Objectifs enregistrés !');
+        }
+
+        // Gestion des opérateurs
+        function addOperateur() {
+            const input = document.getElementById('newOperateur');
+            const nom = input.value.trim();
+            if (!nom) {
+                alert('Veuillez saisir un nom');
+                return;
+            }
+            if (settings.operateurs.includes(nom)) {
+                alert('Cet opérateur existe déjà');
+                return;
+            }
+            settings.operateurs.push(nom);
+            saveSettings();
+            input.value = '';
+            renderOperateursList();
+            updateFormDropdowns();
+        }
+
+        function removeOperateur(nom) {
+            if (confirm(`Supprimer l'opérateur "${nom}" ?`)) {
+                settings.operateurs = settings.operateurs.filter(o => o !== nom);
+                saveSettings();
+                renderOperateursList();
+                updateFormDropdowns();
+            }
+        }
+
+        function renderOperateursList() {
+            const list = document.getElementById('operateursList');
+            list.innerHTML = settings.operateurs.map(op => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-md dark:bg-gray-700 dark:text-gray-100">
+                    <span class="font-medium">${op}</span>
+                    <button onclick="removeOperateur('${op.replace(/'/g, "\\\'")}')" class="text-red-600 hover:text-red-800">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Gestion des types d'arrêts
+        function addTypeArret() {
+            const input = document.getElementById('newTypeArret');
+            const type = input.value.trim();
+            if (!type) {
+                alert('Veuillez saisir un type d\'arrêt');
+                return;
+            }
+            if (settings.typesArret.includes(type)) {
+                alert('Ce type d\'arrêt existe déjà');
+                return;
+            }
+            settings.typesArret.push(type);
+            saveSettings();
+            input.value = '';
+            renderTypeArretsList();
+            updateFormDropdowns();
+        }
+
+        function removeTypeArret(type) {
+            if (confirm(`Supprimer le type d'arrêt "${type}" ?`)) {
+                settings.typesArret = settings.typesArret.filter(t => t !== type);
+                saveSettings();
+                renderTypeArretsList();
+                updateFormDropdowns();
+            }
+        }
+
+        function renderTypeArretsList() {
+            const list = document.getElementById('typeArretsList');
+            list.innerHTML = settings.typesArret.map(type => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-md dark:bg-gray-700 dark:text-gray-100">
+                    <span class="font-medium">${type}</span>
+                    <button onclick="removeTypeArret('${type.replace(/'/g, "\\\'")}')" class="text-red-600 hover:text-red-800">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Gestion des équipes
+        function addEquipe() {
+            const input = document.getElementById('newEquipe');
+            const equipe = input.value.trim();
+            if (!equipe) {
+                alert('Veuillez saisir un nom d\'équipe');
+                return;
+            }
+            if (settings.equipes.includes(equipe)) {
+                alert('Cette équipe existe déjà');
+                return;
+            }
+            settings.equipes.push(equipe);
+            saveSettings();
+            input.value = '';
+            renderEquipesList();
+            updateFormDropdowns();
+        }
+
+        function removeEquipe(equipe) {
+            if (settings.equipes.length <= 1) {
+                alert('Vous devez avoir au moins une équipe');
+                return;
+            }
+            if (confirm(`Supprimer l'équipe "${equipe}" ?`)) {
+                settings.equipes = settings.equipes.filter(e => e !== equipe);
+                saveSettings();
+                renderEquipesList();
+                updateFormDropdowns();
+            }
+        }
+
+        function renderEquipesList() {
+            const list = document.getElementById('equipesList');
+            list.innerHTML = settings.equipes.map(equipe => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-md dark:bg-gray-700 dark:text-gray-100">
+                    <span class="font-medium">${equipe}</span>
+                    <button onclick="removeEquipe('${equipe.replace(/'/g, "\\\'")}')" class="text-red-600 hover:text-red-800">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Mettre à jour les listes déroulantes du formulaire
+        function updateFormDropdowns() {
+            // Types d'arrêts
+            const typeArretSelect = document.getElementById('typeArret');
+            const currentSelectedType = typeArretSelect.value; // Store current value to re-select
+            typeArretSelect.innerHTML = '<option value="">-- Sélectionner --</option>' + 
+                settings.typesArret.map(type => `<option value="${type}">${type}</option>`).join('');
+            typeArretSelect.value = currentSelectedType; // Restore current value
+
+            // Équipes
+            const equipeSelect = document.getElementById('equipe');
+            const currentSelectedEquipe = equipeSelect.value; // Store current value to re-select
+            equipeSelect.innerHTML = settings.equipes.map(eq => `<option value="${eq}">${eq}</option>`).join('');
+            equipeSelect.value = currentSelectedEquipe; // Restore current value
+        }
+
+        // Backup complet
+        function backupAllData() {
+            const backup = {
+                data: data,
+                settings: settings,
+                date: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `rétréints_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            alert('✅ Sauvegarde complète créée !');
+        }
+
+        // Réinitialiser les paramètres
+        function resetAllSettings() {
+            if (confirm('⚠️ Réinitialiser tous les paramètres aux valeurs par défaut ?\n(Les données de production seront conservées)')) {
+                settings = {
+                    tempsAttp: 12,
+                    tempsSeraap: 15,
+                    operateurs: ['Christine (CB)', 'Séverine (MS)'],
+                    typesArret: ['Panne', 'Réglage', 'Changement outil', 'Pause', 'Attente matière', 'Autre'],
+                    equipes: ['Matin', 'Après-midi'],
+                    objectifAttp: 500,
+                    objectifSeraap: 400
+                };
+                saveSettings();
+                loadSettings();
+                alert('✅ Paramètres réinitialisés !');
+            }
+        }
+
+        // Navigation entre onglets
+        function showTab(tabName) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('page-' + tabName).classList.remove('hidden');
+            
+            const isDarkMode = document.documentElement.classList.contains('dark');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                // 1. Remove ALL active-state classes (text, border, background)
+                btn.classList.remove(
+                    'text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50', // Light mode active
+                    'dark:text-indigo-400', 'bg-gray-700' // Dark mode active
+                );
+
+                // 2. Remove ALL hover classes
+                btn.classList.remove(
+                    'hover:bg-gray-50', 'dark:hover:bg-gray-800', // Inactive hover defaults
+                    'hover:bg-indigo-50', 'hover:bg-gray-700' // Active hover states
+                );
+                
+                // 3. Apply INACTIVE state default text color for current theme
+                // Ensure default text colors are applied based on theme for inactive tabs
+                btn.classList.remove('text-gray-600', 'dark:text-gray-300'); // Clean slate for text color
+                if (isDarkMode) {
+                    btn.classList.add('dark:text-gray-300');
+                } else {
+                    btn.classList.add('text-gray-600');
+                }
+
+                // 4. Apply INACTIVE state default hover color for current theme
+                if (isDarkMode) {
+                    btn.classList.add('dark:hover:bg-gray-800');
+                } else {
+                    btn.classList.add('hover:bg-gray-50');
+                }
+            });
+            
+            const activeTabBtn = document.getElementById('tab-' + tabName);
+            
+            // 5. Override for the ACTIVE tab button: remove inactive states
+            activeTabBtn.classList.remove(
+                'text-gray-600', 'dark:text-gray-300', // Inactive text colors
+                'hover:bg-gray-50', 'dark:hover:bg-gray-800' // Inactive hover colors
+            );
+
+            // 6. Apply ACTIVE state styles
+            activeTabBtn.classList.add('border-b-2', 'border-indigo-600'); // Common active border
+
+            if (isDarkMode) {
+                // In dark mode, active tab text is dark:text-indigo-400
+                activeTabBtn.classList.add('dark:text-indigo-400', 'bg-gray-700');
+                // Active hover in dark mode (keep the active background on hover)
+                activeTabBtn.classList.add('hover:bg-gray-700');
+            } else {
+                // In light mode, active tab text is text-indigo-600
+                activeTabBtn.classList.add('bg-indigo-50');
+                // Active hover in light mode (keep the active background on hover)
+                activeTabBtn.classList.add('hover:bg-indigo-50');
+            }
+
+
+            if (tabName === 'stats') {
+                renderStats();
+            }
+            if (tabName === 'parametrage') {
+                loadSettings();
+            }
+            if (tabName === 'saisie') {
+                updateOperateursDatalist();
+                window.scrollTo(0, 0); // Scroll to the top when 'saisie' tab is opened
+            }
+        }
+
+        // Mettre à jour la datalist des opérateurs
+        function updateOperateursDatalist() {
+            const datalist = document.getElementById('operateursDatalist');
+            datalist.innerHTML = settings.operateurs.map(op => `<option value="${op}">`).join('');
+        }
+
+        // Afficher/masquer les champs d'arrêt
+        function toggleArretFields() {
+            const tpsArret = document.getElementById('tpsArret').value;
+            const arretFields = document.getElementById('arretFields');
+            if (tpsArret) {
+                arretFields.classList.remove('hidden');
+            } else {
+                arretFields.classList.add('hidden');
+                document.getElementById('typeArret').value = '';
+                document.getElementById('motifArret').value = '';
+            }
+        }
+
+        // Afficher/masquer le champ rebus
+        function toggleRebusField() {
+            const hasRebus = document.getElementById('hasRebus').checked;
+            const rebusField = document.getElementById('rebusField');
+            if (hasRebus) {
+                rebusField.classList.remove('hidden');
+            } else {
+                rebusField.classList.add('hidden');
+                document.getElementById('quantiteRebus').value = '';
+            }
+        }
+
+        // Sauvegarder les données
+        function saveData() {
+            const form = {
+                date: document.getElementById('date').value,
+                machine: document.getElementById('machine').value,
+                numEtude: document.getElementById('numEtude').value,
+                equipe: document.getElementById('equipe').value,
+                operateur: document.getElementById('operateur').value,
+                quantite: document.getElementById('quantite').value,
+                numLot: document.getElementById('numLot').value,
+                chgtTaraud: document.getElementById('chgtTaraud').value,
+                tpsArret: document.getElementById('tpsArret').value,
+                typeArret: document.getElementById('typeArret').value,
+                motifArret: document.getElementById('motifArret').value,
+                quantiteRebus: document.getElementById('hasRebus').checked ? document.getElementById('quantiteRebus').value : '',
+                commentaire: document.getElementById('commentaire').value,
+                dureePoste: document.getElementById('dureePoste').value,
+                heuresSup: document.getElementById('heuresSup').value
+            };
+
+            if (!form.date || !form.numEtude || !form.operateur || !form.quantite || !form.numLot) {
+                alert('⚠️ Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            if (editingId) {
+                const index = data.findIndex(d => d.id === editingId);
+                data[index] = { ...form, id: editingId };
+                editingId = null;
+            } else {
+                data.push({ ...form, id: Date.now() });
+            }
+
+            localStorage.setItem('rétréints', JSON.stringify(data));
+            resetForm();
+            updateStats();
+            renderTable();
+            alert('✅ Enregistrement réussi !'); // Keep the alert
+        }
+
+        // Annuler le formulaire
+        function cancelForm() {
+            if (confirm('Annuler la saisie ? Les données non enregistrées seront perdues.')) {
+                resetForm();
+                showTab('accueil');
+            }
+        }
+
+        // Réinitialiser le formulaire
+        function resetForm() {
+            document.getElementById('date').value = '';
+            document.getElementById('machine').value = 'ATTP';
+            document.getElementById('numEtude').value = '';
+            document.getElementById('equipe').value = 'Matin';
+            document.getElementById('operateur').value = '';
+            document.getElementById('quantite').value = '';
+            document.getElementById('numLot').value = '';
+            document.getElementById('chgtTaraud').value = '';
+            document.getElementById('tpsArret').value = '';
+            document.getElementById('typeArret').value = '';
+            document.getElementById('motifArret').value = '';
+            document.getElementById('hasRebus').checked = false;
+            document.getElementById('quantiteRebus').value = '';
+            document.getElementById('commentaire').value = '';
+            document.getElementById('dureePoste').value = '07:00';
+            document.getElementById('heuresSup').value = '';
+            document.getElementById('arretFields').classList.add('hidden');
+            document.getElementById('rebusField').classList.add('hidden');
+            editingId = null;
+            document.getElementById('form-title').textContent = 'Nouvelle Saisie';
+        }
+
+        // Modifier un enregistrement
+        function editData(id) {
+            const item = data.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('date').value = item.date;
+            document.getElementById('machine').value = item.machine;
+            document.getElementById('numEtude').value = item.numEtude;
+            document.getElementById('equipe').value = item.equipe;
+            document.getElementById('operateur').value = item.operateur;
+            document.getElementById('quantite').value = item.quantite;
+            document.getElementById('numLot').value = item.numLot;
+            document.getElementById('chgtTaraud').value = item.chgtTaraud || '';
+            document.getElementById('tpsArret').value = item.tpsArret || '';
+            document.getElementById('typeArret').value = item.typeArret || '';
+            document.getElementById('motifArret').value = item.motifArret || '';
+            document.getElementById('commentaire').value = item.commentaire || '';
+            document.getElementById('dureePoste').value = item.dureePoste || '07:00';
+            document.getElementById('heuresSup').value = item.heuresSup || '';
+            
+            if (item.quantiteRebus) {
+                document.getElementById('hasRebus').checked = true;
+                document.getElementById('quantiteRebus').value = item.quantiteRebus;
+                document.getElementById('rebusField').classList.remove('hidden');
+            }
+            
+            if (item.tpsArret) {
+                document.getElementById('arretFields').classList.remove('hidden');
+            }
+            
+            editingId = id;
+            document.getElementById('form-title').textContent = 'Modifier l\'enregistrement';
+            showTab('saisie');
+        }
+
+        // Supprimer toutes les données
+        function deleteAllData() {
+            if (data.length === 0) {
+                alert('❌ Aucune donnée à supprimer');
+                return;
+            }
+
+            const confirmMsg = `⚠️ ATTENTION !\n\nVous êtes sur le point de supprimer TOUTES les données (${data.length} enregistrement(s)).\n\nVoulez-vous d'abord créer une sauvegarde ?`;
+            
+            const response = confirm(confirmMsg);
+            
+            if (!response) {
+                alert('Opération annulée. Les données n\'ont pas été supprimées.');
+                return; // Annulation
+            }
+
+            // Créer une sauvegarde automatique
+            const backup = {
+                data: data,
+                settings: settings,
+                date: new Date().toISOString(),
+                type: 'backup_before_delete'
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `rétréints_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+
+            // Attendre un peu pour que le téléchargement démarre
+            setTimeout(() => {
+                const finalConfirm = confirm(`✅ Sauvegarde créée !\n\n🗑️ Confirmer la suppression de ${data.length} enregistrement(s) ?\n\nCette action est IRRÉVERSIBLE.`);
+                
+                if (finalConfirm) {
+                    data = [];
+                    localStorage.setItem('rétréints', JSON.stringify(data));
+                    updateStats();
+                    renderTable();
+                    alert('✅ Toutes les données ont été supprimées.\n\nLa sauvegarde a été téléchargée.');
+                } else {
+                    alert('Opération annulée. Les données n\'ont pas été supprimées.'); // Added for clarity
+                }
+            }, 500);
+        }
+
+        // Supprimer un enregistrement
+        function deleteData(id) {
+            if (confirm('Supprimer cet enregistrement ?')) {
+                data = data.filter(d => d.id !== id);
+                localStorage.setItem('rétréints', JSON.stringify(data));
+                updateStats();
+                renderTable();
+            }
+        }
+
+        // Afficher le tableau (avec tri chronologique décroissant)
+        function renderTable() {
+            const tbody = document.getElementById('dataTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">Aucun enregistrement</td></tr>';
+                return;
+            }
+
+            // Tri des données par date (ordre chronologique décroissant: du plus récent au plus ancien)
+            const sortedData = [...data].sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            tbody.innerHTML = sortedData.map(item => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-4 py-3 text-sm">${convertDateToFR(item.date)}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${item.machine === 'ATTP' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100'}">
+                            ${item.machine}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">${item.numEtude}</td>
+                    <td class="px-4 py-3 text-sm">${item.equipe}</td>
+                    <td class="px-4 py-3 text-sm">${item.operateur}</td>
+                    <td class="px-4 py-3 text-sm font-medium">${item.quantite}</td>
+                    <td class="px-4 py-3 text-sm">${item.numLot}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="editData(${item.id})" class="text-indigo-600 hover:text-indigo-900 mr-2 dark:text-indigo-400 dark:hover:text-indigo-200">✏️</button>
+                        <button onclick="deleteData(${item.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filtrer le tableau
+        function filterTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            // Important: filter on original data, then render sorted
+            const filteredData = data.filter(item => {
+                const displayDate = convertDateToFR(item.date).toLowerCase(); // Convert date to FR format for searching
+                return (
+                    displayDate.includes(search) ||
+                    item.machine.toLowerCase().includes(search) ||
+                    item.numEtude.toString().includes(search) ||
+                    item.equipe.toLowerCase().includes(search) ||
+                    item.operateur.toLowerCase().includes(search) ||
+                    item.quantite.toString().includes(search) ||
+                    item.numLot.toString().includes(search) ||
+                    (item.commentaire && item.commentaire.toLowerCase().includes(search)) || // Check if exists
+                    (item.motifArret && item.motifArret.toLowerCase().includes(search)) ||   // Check if exists
+                    (item.typeArret && item.typeArret.toLowerCase().includes(search))       // Check if exists
+                );
+            });
+
+            const tbody = document.getElementById('dataTable');
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">Aucun enregistrement trouvé</td></tr>';
+                return;
+            }
+
+            // Tri des données filtrées par date (ordre chronologique décroissant)
+            const sortedFilteredData = [...filteredData].sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            tbody.innerHTML = sortedFilteredData.map(item => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-4 py-3 text-sm">${convertDateToFR(item.date)}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${item.machine === 'ATTP' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100'}">
+                            ${item.machine}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">${item.numEtude}</td>
+                    <td class="px-4 py-3 text-sm">${item.equipe}</td>
+                    <td class="px-4 py-3 text-sm">${item.operateur}</td>
+                    <td class="px-4 py-3 text-sm font-medium">${item.quantite}</td>
+                    <td class="px-4 py-3 text-sm">${item.numLot}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="editData(${item.id})" class="text-indigo-600 hover:text-indigo-900 mr-2 dark:text-indigo-400 dark:hover:text-indigo-200">✏️</button>
+                        <button onclick="deleteData(${item.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats() {
+            const total = data.length;
+            const attp = data.filter(d => d.machine === 'ATTP').length;
+            const seraap = data.filter(d => d.machine === 'SERAAP').length;
+            const quantite = data.reduce((sum, d) => sum + (parseInt(d.quantite) || 0), 0);
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-attp').textContent = attp;
+            document.getElementById('stat-seraap').textContent = seraap;
+            document.getElementById('stat-quantite').textContent = quantite;
+
+            document.getElementById('stats-total').textContent = total;
+            document.getElementById('stats-attp').textContent = attp;
+            document.getElementById('stats-seraap').textContent = seraap;
+            document.getElementById('stats-quantite').textContent = quantite;
+        }
+
+        // Afficher les statistiques détaillées
+        function renderStats() {
+            const total = data.length;
+            const attp = data.filter(d => d.machine === 'ATTP').length;
+            const seraap = data.filter(d => d.machine === 'SERAAP').length;
+
+            const attpPercent = total > 0 ? Math.round(attp / total * 100) : 0;
+            const seraapPercent = total > 0 ? Math.round(seraap / total * 100) : 0;
+
+            document.getElementById('machineStats').innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm font-medium">ATTP</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-300">${attp} (${attpPercent}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-600">
+                            <div class="bg-blue-600 h-3 rounded-full" style="width: ${attpPercent}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm font-medium">SERAAP</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-300">${seraap} (${seraapPercent}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-600">
+                            <div class="bg-purple-600 h-3 rounded-full" style="width: ${seraapPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Top opérateurs
+            const ops = {};
+            data.forEach(d => {
+                if (!ops[d.operateur]) ops[d.operateur] = { count: 0, quantite: 0 };
+                ops[d.operateur].count++;
+                ops[d.operateur].quantite += parseInt(d.quantite) || 0;
+            });
+
+            const topOps = Object.entries(ops)
+                .map(([name, stats]) => ({ name, ...stats }))
+                .sort((a, b) => b.quantite - a.quantite)
+                .slice(0, 5);
+
+            const totalQte = data.reduce((sum, d) => sum + (parseInt(d.quantite) || 0), 0);
+
+            document.getElementById('operateurStats').innerHTML = topOps.length === 0 
+                ? '<p class="text-gray-500 text-center py-8 dark:text-gray-400">Aucune donnée</p>'
+                : topOps.map((op, i) => `
+                    <div class="flex items-center space-x-4 mb-3">
+                        <div class="text-2xl font-bold text-gray-400 w-8 dark:text-gray-500">${i + 1}</div>
+                        <div class="flex-1">
+                            <div class="flex justify-between mb-1">
+                                <span class="font-medium text-sm">${op.name}</span>
+                                <span class="text-xs text-gray-600 dark:text-gray-300">${op.count} ops | ${op.quantite} pcs</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="bg-indigo-600 h-2 rounded-full" style="width: ${totalQte > 0 ? (op.quantite / totalQte * 100) : 0}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            // KPI Calculations
+            const kpiData = {
+                ATTP: {
+                    totalOpeningTime: 0, // in seconds
+                    totalStopTime: 0,    // in seconds
+                    totalProduced: 0, // Good quantity
+                    totalRejects: 0 // Rejected quantity
+                },
+                SERAAP: {
+                    totalOpeningTime: 0, // in seconds
+                    totalStopTime: 0,    // in seconds
+                    totalProduced: 0, // Good quantity
+                    totalRejects: 0 // Rejected quantity
+                }
+            };
+
+            // Data for charts
+            const dailyProductionMap = new Map(); // date -> total_quantity
+            const machineProductionMap = new Map(); // machine -> total_quantity
+
+
+            data.forEach(item => {
+                const machine = item.machine; // 'ATTP' or 'SERAAP'
+                const quantity = parseInt(item.quantite) || 0;
+                const rejects = parseInt(item.quantiteRebus) || 0;
+                const date = item.date;
+
+                // Aggregate for KPIs
+                if (kpiData[machine]) {
+                    let dailyOpeningTimeMinutes = timeToMinutes(item.dureePoste || '07:00'); 
+                    if (item.heuresSup) {
+                        dailyOpeningTimeMinutes += timeToMinutes(item.heuresSup);
+                    }
+                    kpiData[machine].totalOpeningTime += dailyOpeningTimeMinutes * 60;
+                    kpiData[machine].totalStopTime += timeToSeconds(item.tpsArret);
+                    kpiData[machine].totalProduced += quantity;
+                    kpiData[machine].totalRejects += rejects;
+                }
+
+                // Aggregate for Daily Production Chart (total produced + rejects)
+                dailyProductionMap.set(date, (dailyProductionMap.get(date) || 0) + quantity + rejects);
+
+                // Aggregate for Machine Production Chart (total produced + rejects)
+                machineProductionMap.set(machine, (machineProductionMap.get(machine) || 0) + quantity + rejects);
+            });
+
+            const calculateKpis = (machineName, kpiObj) => {
+                const tempsCycleIdeal = settings[`temps${machineName}`]; 
+                
+                if (!tempsCycleIdeal || tempsCycleIdeal <= 0) {
+                    return {
+                        disponibilite: 'N/A', performance: 'N/A', qualite: 'N/A', tauxRebus: 'N/A', trs: 'N/A'
+                    };
+                }
+
+                const totalOpeningTime = kpiObj.totalOpeningTime;
+                const totalStopTime = kpiObj.totalStopTime;
+                const totalProduced = kpiObj.totalProduced;
+                const totalRejects = kpiObj.totalRejects;
+                const totalItemsManufactured = totalProduced + totalRejects; // Total items that went through production
+
+                let disponibilite = 0;
+                let performance = 0;
+                let qualite = 0;
+                let tauxRebus = 0;
+                let trs = 0;
+
+                // Disponibilité
+                if (totalOpeningTime > 0) {
+                    const tempsCharge = totalOpeningTime - totalStopTime;
+                    disponibilite = (tempsCharge / totalOpeningTime);
+                    disponibilite = Math.max(0, Math.min(1, disponibilite));
+                    
+                    // Performance
+                    if (tempsCharge > 0) {
+                        const tempsNetFonctionnementIdeal = totalProduced * tempsCycleIdeal;
+                        performance = tempsNetFonctionnementIdeal / tempsCharge;
+                        performance = Math.max(0, performance);
+                    }
+                }
+                
+                // Qualité
+                if (totalItemsManufactured > 0) {
+                    qualite = totalProduced / totalItemsManufactured;
+                    qualite = Math.max(0, Math.min(1, qualite));
+                }
+
+                // Taux de Rebus
+                if (totalItemsManufactured > 0) {
+                    tauxRebus = totalRejects / totalItemsManufactured;
+                    tauxRebus = Math.max(0, Math.min(1, tauxRebus));
+                }
+
+
+                // TRS
+                trs = disponibilite * performance * qualite;
+                trs = Math.max(0, Math.min(1, trs));
+
+                return {
+                    disponibilite: (disponibilite * 100).toFixed(1) + '%',
+                    performance: (performance * 100).toFixed(1) + '%',
+                    qualite: (qualite * 100).toFixed(1) + '%',
+                    tauxRebus: (tauxRebus * 100).toFixed(1) + '%',
+                    trs: (trs * 100).toFixed(1) + '%'
+                };
+            };
+
+            const kpisAttp = calculateKpis('Attp', kpiData.ATTP);
+            const kpisSeraap = calculateKpis('Seraap', kpiData.SERAAP);
+
+            // Update the UI with KPI values
+            document.getElementById('kpi-attp-dispo').textContent = kpisAttp.disponibilite;
+            document.getElementById('kpi-attp-perf').textContent = kpisAttp.performance;
+            document.getElementById('kpi-attp-quali').textContent = kpisAttp.qualite;
+            document.getElementById('kpi-attp-rebus').textContent = kpisAttp.tauxRebus;
+            document.getElementById('kpi-attp-trs').textContent = kpisAttp.trs;
+
+            document.getElementById('kpi-seraap-dispo').textContent = kpisSeraap.disponibilite;
+            document.getElementById('kpi-seraap-perf').textContent = kpisSeraap.performance;
+            document.getElementById('kpi-seraap-quali').textContent = kpisSeraap.qualite;
+            document.getElementById('kpi-seraap-rebus').textContent = kpisSeraap.tauxRebus;
+            document.getElementById('kpi-seraap-trs').textContent = kpisSeraap.trs;
+
+            // Render Charts
+            renderDailyProductionChart(dailyProductionMap);
+            renderMachineProductionChart(machineProductionMap);
+        }
+
+        // --- Chart Functions ---
+        function getChartColors() {
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            return {
+                fontColor: isDarkMode ? '#e2e8f0' : '#4a5568', // gray-200 / gray-700
+                gridColor: isDarkMode ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)', // slate-400 / gray-200
+                tooltipBg: isDarkMode ? '#374151' : '#ffffff', // gray-700 / white
+                tooltipBorder: isDarkMode ? '#4b5563' : '#e5e7eb', // gray-600 / gray-200
+                lineColor: isDarkMode ? '#818cf8' : '#4f46e5', // indigo-300 / indigo-600
+                lineFillColor: isDarkMode ? 'rgba(129, 140, 248, 0.2)' : 'rgba(79, 70, 229, 0.2)', // Light indigo for fill
+                barColors: [
+                    isDarkMode ? '#60a5fa' : '#3b82f6', // blue-400 / blue-500
+                    isDarkMode ? '#a78bfa' : '#8b5cf6'  // purple-400 / purple-500
+                ],
+                labelColor: isDarkMode ? '#cbd5e1' : '#64748b' // slate-300 / slate-500
+            };
+        }
+
+        function renderDailyProductionChart(dailyDataMap) {
+            const canvas = document.getElementById('dailyProductionChart');
+            if (!canvas) {
+                console.error("Canvas element 'dailyProductionChart' not found.");
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error("Failed to get 2D context for dailyProductionChart.");
+                return;
+            }
+            const colors = getChartColors();
+            const isDarkMode = document.documentElement.classList.contains('dark'); // Re-evaluate here for direct access in options if needed
+
+            // Sort daily data by date
+            const sortedDates = Array.from(dailyDataMap.keys()).sort();
+            const labels = sortedDates.map(date => convertDateToFR(date)); // Convert date format for display
+            const dataValues = sortedDates.map(date => dailyDataMap.get(date));
+
+            if (chartInstances.dailyProductionChart) {
+                chartInstances.dailyProductionChart.destroy();
+            }
+
+            chartInstances.dailyProductionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Quantité Totale Produite',
+                        data: dataValues,
+                        borderColor: colors.lineColor,
+                        backgroundColor: colors.lineFillColor, // Use the pre-defined rgba color
+                        tension: 0.3, // Curve the lines slightly
+                        fill: true,
+                        pointRadius: 3, // Make points visible
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: 'Tendance de Production Journalière'
+                        },
+                        legend: {
+                            labels: {
+                                color: colors.fontColor, // Legend font color
+                                font: {
+                                    size: 12 // Smaller legend font for mobile
+                                }
+                            }
+                        },
+                        tooltip: { // Customize tooltip for dark mode
+                            backgroundColor: colors.tooltipBg,
+                            borderColor: colors.tooltipBorder,
+                            borderWidth: 1,
+                            titleColor: colors.fontColor,
+                            bodyColor: colors.fontColor,
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: colors.gridColor
+                            },
+                            ticks: {
+                                color: colors.fontColor, // X-axis label color
+                                font: {
+                                    size: 10 // Smaller font for x-axis ticks
+                                },
+                                autoSkip: true, // Automatically skip labels to prevent overlap
+                                maxRotation: 45, // Rotate labels up to 45 degrees if necessary
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: colors.gridColor
+                            },
+                            ticks: {
+                                color: colors.fontColor, // Y-axis label color
+                                font: {
+                                    size: 10 // Smaller font for y-axis ticks
+                                }
+                            }
+                        }
+                    },
+                }
+            });
+        }
+
+        function renderMachineProductionChart(machineDataMap) {
+            const canvas = document.getElementById('machineProductionChart');
+            if (!canvas) {
+                console.error("Canvas element 'machineProductionChart' not found.");
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error("Failed to get 2D context for machineProductionChart.");
+                return;
+            }
+            const colors = getChartColors();
+            const isDarkMode = document.documentElement.classList.contains('dark'); // Re-evaluate here for direct access in options if needed
+
+            if (chartInstances.machineProductionChart) {
+                chartInstances.machineProductionChart.destroy();
+            }
+
+            chartInstances.machineProductionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from(machineDataMap.keys()),
+                    datasets: [{
+                        label: 'Quantité Totale',
+                        data: Array.from(machineDataMap.values()),
+                        backgroundColor: colors.barColors,
+                        borderColor: colors.barColors, // Use same colors for border
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: 'Répartition de la Production par Machine'
+                        },
+                        legend: {
+                            display: false // Hide legend for single dataset bar chart
+                        },
+                        tooltip: { // Customize tooltip for dark mode
+                            backgroundColor: colors.tooltipBg,
+                            borderColor: colors.tooltipBorder,
+                            borderWidth: 1,
+                            titleColor: colors.fontColor,
+                            bodyColor: colors.fontColor,
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: colors.gridColor
+                            },
+                            ticks: {
+                                color: colors.fontColor,
+                                font: {
+                                    size: 10 // Smaller font for x-axis ticks
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: colors.gridColor
+                            },
+                            ticks: {
+                                color: colors.fontColor,
+                                font: {
+                                    size: 10 // Smaller font for y-axis ticks
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        // --- End Chart Functions ---
+
+        // Export CSV
+        function exportCSV() {
+            if (data.length === 0) {
+                alert('Aucune donnée à exporter');
+                return;
+            }
+
+            // Structure: ID, DATE, MACHINE, N° ETUDE, EQUIPE, OPERATEUR/TRICE, QUANTITE, N° LOT, 
+            //            CHGT TARAUD, TPS ARRET, MOTIF ARRET, REBUS, TYPE D'ARRET, COMMENTAIRE, DUREE POSTE, HEURES SUP
+            const headers = ['ID', 'DATE', 'MACHINE', 'N° ETUDE', 'EQUIPE', 'OPERATEUR/TRICE', 'QUANTITE', 'N° LOT', 'CHGT TARAUD', 'TPS ARRET', 'MOTIF ARRET', 'REBUS', 'TYPE D\'ARRET', 'COMMENTAIRE', 'DUREE POSTE', 'HEURES SUP'];
+            
+            const rows = data.map(d => [
+                d.id,
+                convertDateToFR(d.date), // Use FR format for CSV export
+                d.machine, 
+                d.numEtude, 
+                d.equipe, 
+                d.operateur, 
+                d.quantite, 
+                d.numLot, 
+                d.chgtTaraud || '', 
+                d.tpsArret || '',
+                d.motifArret || '',
+                d.quantiteRebus || '',
+                d.typeArret || '',
+                d.commentaire || '',
+                d.dureePoste || '',
+                d.heuresSup || ''
+            ]);
+            
+            // Utiliser tabulation comme séparateur (compatible Excel)
+            const csv = [headers, ...rows].map(row => row.join('\t')).join('\n');
+            
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `rétréints_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // Export JSON
+        function exportJSON() {
+            if (data.length === 0) {
+                alert('Aucune donnée à exporter');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `rétréints_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        // Convertir date JJ/MM/AAAA vers AAAA-MM-JJ
+        function convertDateToISO(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split(/[-\/]/); // Handle both - and / as separators
+            if (parts.length === 3) {
+                // Assuming DD/MM/YYYY or DD-MM-YYYY input for conversion to YYYY-MM-DD
+                if (parts[2].length === 4) { // Likely YYYY-MM-DD or DD-MM-YYYY (full year)
+                     if (parseInt(parts[0]) > 12) { // Likely DD-MM-YYYY (Day part > 12)
+                         return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                     } else { // Could be MM-DD-YYYY or DD-MM-YYYY, default to current format
+                         return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                     }
+                }
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+            return dateStr;
+        }
+
+        // Convertir date AAAA-MM-JJ vers JJ-MM-AAAA
+        function convertDateToFR(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-'); // Expecting YYYY-MM-DD
+            if (parts.length === 3) {
+                return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        // Import CSV
+        function importCSV() {
+            const file = document.getElementById('importCSVFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n').filter(line => line.trim());
+                    
+                    if (lines.length < 2) {
+                        alert('Fichier CSV vide ou invalide');
+                        return;
+                    }
+
+                    // Ignorer la première ligne (en-têtes)
+                    const dataLines = lines.slice(1);
+                    const imported = [];
+                    const duplicates = [];
+                    const errors = [];
+
+                    for (let i = 0; i < dataLines.length; i++) {
+                        const line = dataLines[i];
+                        // Séparateur: tabulation ou point-virgule
+                        const values = line.split(/\t|;/).map(v => v.trim().replace(/^"|"$/g, ''));
+                        
+                        if (values.length < 8) {
+                            errors.push(`Ligne ${i + 2}: Format invalide (colonnes manquantes)`);
+                            continue;
+                        }
+
+                        // Structure CSV: ID, DATE, MACHINE, N° ETUDE, EQUIPE, OPERATEUR/TRICE, QUANTITE, N° LOT, 
+                        //                CHGT TARAUD, TPS ARRET, MOTIF ARRET, REBUS, TYPE D'ARRET, COMMENTAIRE, DUREE POSTE, HEURES SUP
+                        
+                        const dateISO = convertDateToISO(values[1]); // Ensure date is ISO format for internal storage
+                        
+                        const newItem = {
+                            date: dateISO,
+                            machine: values[2] || 'ATTP',
+                            numEtude: values[3] || '',
+                            equipe: values[4] || 'Matin',
+                            operateur: values[5] || '',
+                            quantite: values[6] || '0',
+                            numLot: values[7] || '',
+                            chgtTaraud: values[8] || '',
+                            tpsArret: values[9] || '',
+                            motifArret: values[10] || '',
+                            quantiteRebus: values[11] || '',
+                            typeArret: values[12] || '',
+                            commentaire: values[13] || '',
+                            heuresSup: values[15] || '',
+                            id: Date.now() + Math.random()
+                        };
+
+                        // Validation des champs obligatoires
+                        if (!newItem.date || !newItem.numEtude || !newItem.operateur || !newItem.numLot) {
+                            errors.push(`Ligne ${i + 2}: Champs obligatoires manquants (${values[1]}, ${values[3]}, ${values[5]}, ${values[7] || 'N/A pour NumLot'})`);
+                            continue;
+                        }
+
+                        // Contrôle de doublon
+                        const isDuplicate = data.some(existing => 
+                            existing.date === newItem.date &&
+                            existing.machine === newItem.machine &&
+                            existing.numEtude === newItem.numEtude &&
+                            existing.numLot === newItem.numLot &&
+                            existing.operateur === newItem.operateur
+                        );
+
+                        if (isDuplicate) {
+                            duplicates.push(`Ligne ${i + 2}: ${values[1]} - ${newItem.machine} - ${newItem.numEtude} - ${newItem.operateur}`);
+                            continue;
+                        }
+
+                        imported.push(newItem);
+                    }
+
+                    // Afficher le résumé
+                    let message = `📊 Résumé de l'import:\n\n`;
+                    message += `✅ ${imported.length} enregistrement(s) valide(s)\n`;
+                    
+                    if (duplicates.length > 0) {
+                        message += `⚠️ ${duplicates.length} doublon(s) détecté(s)\n`;
+                    }
+                    
+                    if (errors.length > 0) {
+                        message += `❌ ${errors.length} erreur(s)\n`;
+                    }
+
+                    if (imported.length === 0) {
+                        alert(message + '\nAucune donnée à importer.');
+                        if (duplicates.length > 0) {
+                            console.log('Doublons détectés:', duplicates);
+                        }
+                        if (errors.length > 0) {
+                            console.log('Erreurs:', errors);
+                        }
+                        return;
+                    }
+
+                    message += `\n📝 Détails:\n`;
+                    if (duplicates.length > 0) {
+                        message += `\nDoublons ignorés:\n${duplicates.slice(0, 3).join('\n')}`;
+                        if (duplicates.length > 3) {
+                            message += `\n... et ${duplicates.length - 3} autre(s)`;
+                        }
+                    }
+                    
+                    if (errors.length > 0) {
+                        message += `\n\nErreurs:\n${errors.slice(0, 3).join('\n')}`;
+                        if (errors.length > 3) {
+                            message += `\n... et ${errors.length - 3} autre(s)`;
+                        }
+                    }
+
+                    if (confirm(message + '\n\nConfirmer l\'import ?')) {
+                        data = [...data, ...imported];
+                        localStorage.setItem('rétréints', JSON.stringify(data));
+                        updateStats();
+                        renderTable();
+                        
+                        let resultMsg = `✅ ${imported.length} enregistrement(s) importé(s) avec succès !`;
+                        if (duplicates.length > 0) {
+                            resultMsg += `\n⚠️ ${duplicates.length} doublon(s) ignoré(s)`;
+                        }
+                        if (errors.length > 0) {
+                            resultMsg += `\n❌ ${errors.length} ligne(s) avec erreur(s)`;
+                        }
+                        alert(resultMsg);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('❌ Erreur lors de l\'import du CSV.\n\n' + err.message + '\n\nVérifiez le format du fichier.\nStructure attendue (séparée par tabulations):\nID	DATE	MACHINE	N° ETUDE	EQUIPE	OPERATEUR/TRICE	QUANTITE	N° LOT	CHGT TARAUD	TPS ARRET	MOTIF ARRET	REBUS	TYPE D\'ARRET	COMMENTAIRE	DUREE POSTE	HEURES SUP');
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+            document.getElementById('importCSVFile').value = '';
+        }
+
+        // Import JSON
+        function importJSON() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        if (confirm(`Importer ${imported.length} enregistrements ?`)) {
+                            data = [...data, ...imported.map(item => ({ ...item, id: Date.now() + Math.random() }))];
+                            localStorage.setItem('rétréints', JSON.stringify(data));
+                            updateStats();
+                            renderTable();
+                            alert('Import réussi !');
+                        }
+                    }
+                } catch (err) {
+                    alert('Erreur lors de l\'import');
+                }
+            };
+            reader.readAsText(file);
+            document.getElementById('importFile').value = '';
+        }
+    </script>
+</body>
+</html>
